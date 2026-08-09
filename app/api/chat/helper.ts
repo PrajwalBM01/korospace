@@ -89,6 +89,7 @@ export async function getContext(nodeId: string, dbMessages: UIMessage[]) {
       id: {
         in: ancestors,
       },
+      canvasId: nodeDetails?.canvasId,
     },
     select: {
       id: true,

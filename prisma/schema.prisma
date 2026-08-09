@@ -56,6 +56,8 @@ model Node {
   messages  Message[]
   incoming  Edge[]    @relation("targetNode")
   outgoing  Edge[]    @relation("sourceNode")
+
+  @@index([canvasId])
 }
 
 model Edge {
@@ -68,6 +70,10 @@ model Edge {
   targetNode           Node    @relation("targetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
   branchPointMessageId String?
   branchMessage        String?
+
+  @@index([canvasId])
+  @@index([sourceNodeId])
+  @@index([targetNodeId])
 }
 
 model Message {
@@ -77,6 +83,8 @@ model Message {
   role      Role
   content   String
   createdAt DateTime @default(now())
+
+  @@index([nodeId, createdAt])
 }
 
 model User {

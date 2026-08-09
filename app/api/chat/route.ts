@@ -5,29 +5,78 @@ import {
   toUIMessageStream,
   UIMessage,
 } from "ai"
-import { google } from "@ai-sdk/google"
 import { NextRequest, NextResponse } from "next/server"
 import { getContext, loadMessages } from "./helper"
-import { updateMessages } from "@/actions/chatActions"
+import { saveAssistantMessage, saveUserMessage } from "@/actions/chatActions"
 import { createId } from "@paralleldrive/cuid2"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
+import z from "zod"
+import { MessageSchema } from "@/app/generated/zod/schemas/models"
+import { auth } from "@/lib/auth"
+import prisma from "@/lib/prisma"
+import { Prisma } from "@/app/generated/prisma/client"
+
+export const runtime = "nodejs"
+
+const ChatRequestSchema = z.object({
+  nodeId: z.string().min(1),
+  message: z.object({
+    id: z.string(),
+    parts: z
+      .array(
+        z.object({
+          type: z.literal("text"),
+          text: z.string().trim().min(1),
+        })
+      )
+      .min(1)
+      .max(1),
+  }),
+})
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 })
 export async function POST(req: NextRequest) {
-  const { message, nodeId }: { message: UIMessage; nodeId: string } =
-    await req.json()
+  const session = await auth.api.getSession({ headers: req.headers })
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
 
-  await updateMessages(nodeId, message)
+  const incoming = await req.json().catch(() => null)
+  if (!incoming)
+    return NextResponse.json({ error: "Malformed JSON" }, { status: 400 })
+
+  const parsed = ChatRequestSchema.safeParse(incoming)
+  if (!parsed.success) {
+    return NextResponse.json({ error: "invalid Request" }, { status: 400 })
+  }
+
+  const { nodeId, message } = parsed.data
+
+  const node = await prisma.node.findFirst({
+    where: { id: nodeId, canvas: { userId: session.user.id } },
+    select: { id: true, canvasId: true },
+  })
+  if (!node)
+    return NextResponse.json({ error: "Node not found" }, { status: 404 })
+
+  try {
+    await saveUserMessage(nodeId, {
+      messageId: message.id,
+      text: message.parts[0].text,
+    })
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002")
+        return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    }
+  }
 
   const dbMessages = await loadMessages(nodeId)
-  // dbMessages.push({ id: message.id, role: message.role, parts: message.parts })
 
   //context
-  const system = await getContext(nodeId,dbMessages)
-
-  console.log("system prompt", system)
+  const system = await getContext(nodeId, dbMessages)
 
   const aiId = createId()
 
@@ -43,9 +92,17 @@ export async function POST(req: NextRequest) {
       originalMessages: dbMessages,
       generateMessageId: () => aiId,
       onEnd: async (endData) => {
-        await updateMessages(nodeId, {
-          ...endData.responseMessage,
-          id: aiId,
+        const text = endData.responseMessage.parts
+          .filter((part) => part.type === "text")
+          .map((part) => part.text)
+          .join("")
+          .trim()
+
+        if (!text) return
+
+        await saveAssistantMessage(nodeId, {
+          messageId: aiId,
+          text: text,
         })
       },
     }),

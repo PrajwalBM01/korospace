@@ -55,7 +55,7 @@ const page = () => {
               minLength={8}
             />
             <Button type="submit" disabled={loading}>
-              {loading ? "logging in" : "Sign up"}
+              {loading ? "logging in" : "Sign in"}
             </Button>
           </div>
         </form>

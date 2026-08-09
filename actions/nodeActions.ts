@@ -1,7 +1,5 @@
 "use server"
 import prisma from "@/lib/prisma"
-import { z } from "zod"
-import { NodeType } from "../app/generated/prisma/enums"
 import {
   CreateNodeSchema,
   createNodeType,
@@ -12,40 +10,62 @@ import {
   updateTextNodeSchema,
   updateTextNodeType,
 } from "@/types/nodeSchema"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 
 export async function insertNode(data: createNodeType) {
-  const validFields = CreateNodeSchema.safeParse(data)
-  console.log(data)
-  console.log(validFields)
+  //authN
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    throw new Error("Unathorised")
+  }
 
+  //input validation
+  const validFields = CreateNodeSchema.safeParse(data)
   if (!validFields.success) {
     throw new Error("invalid input data")
   }
 
-  await prisma.node.create({
+  //authz and db query
+  await prisma.canvas.update({
+    where: {
+      id: validFields.data.canvasId,
+      userId: session.user.id,
+    },
     data: {
-      id: validFields.data.nodeId,
-      canvasId: validFields.data.canvasId,
-      type: validFields.data.type,
-      positionX: validFields.data.posX,
-      positionY: validFields.data.posY,
-      data: validFields.data.data,
+      nodes: {
+        create: {
+          id: validFields.data.nodeId,
+          type: validFields.data.type,
+          positionX: validFields.data.posX,
+          positionY: validFields.data.posY,
+          data: validFields.data.data,
+        },
+      },
     },
   })
 }
 
 //update
 export async function updateNodePos(data: updateNodePosType) {
-  console.log(data)
-  const validateFileds = UpdateNodePosSchema.safeParse(data)
-  console.log(validateFileds)
+  //authN
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    throw new Error("Unathorised")
+  }
 
+  //validation
+  const validateFileds = UpdateNodePosSchema.safeParse(data)
   if (!validateFileds.success) {
     throw new Error("invalid input data")
   }
 
+  //authz and db query
   await prisma.node.update({
-    where: { id: validateFileds.data.nodeId },
+    where: {
+      id: validateFileds.data.nodeId,
+      canvas: { userId: session.user.id },
+    },
     data: {
       positionX: validateFileds.data.posX,
       positionY: validateFileds.data.posY,
@@ -54,14 +74,21 @@ export async function updateNodePos(data: updateNodePosType) {
 }
 
 export async function updateTextNode(data: updateTextNodeType) {
-  const validField = updateTextNodeSchema.safeParse(data)
+  //authN
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    throw new Error("Unathorised")
+  }
 
+  //validation
+  const validField = updateTextNodeSchema.safeParse(data)
   if (!validField.success) {
     throw new Error("invalid input data")
   }
 
+  //authz and query
   await prisma.node.update({
-    where: { id: validField.data.nodeId },
+    where: { id: validField.data.nodeId, canvas: { userId: session.user.id } },
     data: {
       data: validField.data.content,
     },
@@ -70,11 +97,23 @@ export async function updateTextNode(data: updateTextNodeType) {
 
 //delete
 export async function deleteNode(data: deleteNodeType) {
-  const validateFileds = DeleteNodeSchema.safeParse(data)
+  //authN
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    throw new Error("Unathorised")
+  }
 
+  //validation
+  const validateFileds = DeleteNodeSchema.safeParse(data)
   if (!validateFileds.success) {
     throw new Error("invlaid input data")
   }
 
-  await prisma.node.delete({ where: { id: validateFileds.data.nodeId } })
+  //authz and query
+  await prisma.node.delete({
+    where: {
+      id: validateFileds.data.nodeId,
+      canvas: { userId: session.user.id },
+    },
+  })
 }

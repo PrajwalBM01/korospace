@@ -22,9 +22,6 @@ export default function ChatCanvas({
   nodes: appNodes[]
   edges: Edge[]
 }) {
-  const { state } = useSidebar()
-  const { freshStart } = useCanvasStore()
-
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -34,6 +31,7 @@ export default function ChatCanvas({
               <SidebarTrigger />
             </span>
           )} */}
+         
           <ReactFlowProvider>
             <Rfcanvas rfnodes={nodes} rfedges={edges} />
           </ReactFlowProvider>

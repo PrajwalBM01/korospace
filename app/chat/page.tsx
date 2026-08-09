@@ -8,12 +8,18 @@ const page = async () => {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect("/signin")
 
-  const canvasId = await prisma.canvas.findFirst({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-  })
+  const canvasId =
+    (await prisma.canvas.findFirst({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+    })) ??
+    (await prisma.canvas.create({
+      data: {
+        userId: session.user.id,
+        title: "untitled canvas",
+      },
+    }))
 
-  if (!canvasId) redirect("/signin")
 
   redirect(`/chat/${canvasId.id}`)
 

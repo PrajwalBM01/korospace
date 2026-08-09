@@ -17,6 +17,7 @@ export const toUiMessage = (messages: DbMessages): UIMessage[] =>
  * consumer of the same instance, so the node and the side view stay in sync
  * (including while a response is streaming).
  */
+
 const chats = new Map<string, Chat<UIMessage>>()
 
 export const getNodeChat = (nodeId: string, initial: DbMessages) => {
@@ -44,3 +45,5 @@ export const getNodeChat = (nodeId: string, initial: DbMessages) => {
 export const disposeNodeChat = (nodeId: string) => {
   chats.delete(nodeId)
 }
+
+export const disposeAllChats = () => chats.clear()

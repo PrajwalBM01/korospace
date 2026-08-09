@@ -1,5 +1,4 @@
 "use client"
-import "@xyflow/react/dist/style.css"
 import {
   Background,
   Controls,
@@ -44,10 +43,10 @@ import { LeftTrigger, RightTrigger } from "@/components/sidebarTriggers"
 import LeftSidebar from "@/components/LeftSidebar"
 import { Sheet } from "@/components/ui/sheet"
 import ChatSidebar from "@/components/chat-sidebar"
-import { disposeNodeChat } from "@/lib/chat-registry"
+import { disposeAllChats, disposeNodeChat } from "@/lib/chat-registry"
 
-const handleNodeDrag: OnNodeDrag = (event, node) => {
-  updateNodePos({
+const handleNodeDrag: OnNodeDrag = async (event, node) => {
+  await updateNodePos({
     nodeId: node.id,
     posX: node.position.x,
     posY: node.position.y,
@@ -67,13 +66,12 @@ const page = ({
   const { resolvedTheme } = useTheme()
   const { screenToFlowPosition, getEdges, getZoom, getNodes } = useReactFlow()
   const { selected, clear } = useSelection()
-  const { setFreshStart, freshStart, isMouse, sideViewNodeId, closeSideView } =
+  const { isMouse, sideViewNodeId, closeSideView } =
     useCanvasStore()
 
-  useEffect(() => {
-    const currentNodes = getNodes()
-    currentNodes.length === 0 ? setFreshStart(true) : setFreshStart(false)
-  }, [nodes])
+  const freshStart = nodes.length === 0
+
+  useEffect(() => () => disposeAllChats(), [id])
 
   const anchor = useMemo(
     () =>
@@ -248,10 +246,10 @@ const page = ({
       onEdgesChange={onEdgesChange}
       onNodeDragStop={handleNodeDrag}
       onNodesDelete={(nodes) => {
-        nodes.map((n) => {
+        nodes.map(async (n) => {
           if (n.id === sideViewNodeId) closeSideView()
           disposeNodeChat(n.id)
-          deleteNode({ nodeId: n.id })
+          await deleteNode({ nodeId: n.id })
         })
       }}
       onConnect={handleEdgeConnection}
@@ -262,27 +260,24 @@ const page = ({
       panOnDrag={isMouse}
     >
       <Background />
+      {freshStart && (
+        <div className="pointer-events-none absolute z-10 flex h-full w-full items-center justify-center gap-2 text-foreground/40">
+          <MousePointerClick strokeWidth={1.5} />{" "}
+          <h1>Right click to add a new node</h1>
+        </div>
+      )}
       {/* roots left panel */}
       {/* this is for history and profile section, hidden for now */}
       {/* <LeftTrigger />
       <LeftSidebar /> */}
 
       {/* settings right panel */}
-
-      <SidebarProvider defaultOpen={false}>
-        <RightTrigger />
-        <RightSidebar />
-      </SidebarProvider>
+      <RightTrigger />
+      <RightSidebar />
 
       <PaneContext />
       <MiniMap pannable zoomable />
       <Controls showInteractive={false} />
-      {freshStart && (
-        <div className="pointer-events-none absolute z-5 flex h-full w-full items-center justify-center gap-2 text-foreground/40">
-          <MousePointerClick strokeWidth={1.5} />
-          <h1>Right click to add a new node</h1>
-        </div>
-      )}
 
       {/* single sheet for the whole canvas - the open node id is the only state */}
       <Sheet

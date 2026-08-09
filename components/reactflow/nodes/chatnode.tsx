@@ -1,5 +1,7 @@
 "use client"
 import { cn } from "@/lib/utils"
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"
 import { useChat } from "@ai-sdk/react"
 import { Handle, Node, NodeProps, Position, useReactFlow } from "@xyflow/react"
 import React, { MouseEventHandler, useMemo, useState } from "react"
@@ -26,13 +28,8 @@ import { deleteNode } from "@/actions/nodeActions"
 import { useCanvasStore } from "@/store/canvasStore"
 
 const chatnode = (props: NodeProps<chatNode>) => {
-  const [isSelected, setisSelected] = useState(false)
   const { openSideView, sideViewNodeId, closeSideView } = useCanvasStore()
   const { deleteElements } = useReactFlow()
-  const [selectedData, setselectedData] = useState<{
-    messageId: string
-    selectedText: string
-  } | null>(null)
   const [input, setinput] = useState("")
   const chat = useMemo(
     () => getNodeChat(props.id, props.data.messages),
@@ -94,7 +91,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
       <div className="flex flex-col gap-2 p-2">
         <div
           className={cn(
-            "stretch nodrag mx-auto flex h-auto min-h-50 w-full flex-col gap-2 p-1 select-text"
+            "stretch nodrag mx-auto flex h-auto min-h-50 w-full min-w-0 flex-col gap-2 p-1 select-text"
           )}
         >
           {messages.map((message, index) => (
@@ -115,13 +112,55 @@ const chatnode = (props: NodeProps<chatNode>) => {
                       <div
                         key={`${message.id}-${i}`}
                         className={cn(
-                          "relative rounded-xl p-2 whitespace-pre-wrap",
+                          "relative min-w-0 overflow-hidden rounded-xl p-2 whitespace-pre-wrap",
                           message.role === "user"
                             ? "w-2/3 bg-card"
                             : "text-start"
                         )}
                       >
-                        <ReactMarkDown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkDown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code({ className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(
+                                className || ""
+                              )
+                              const isBlock = !!match
+
+                              if (!isBlock) {
+                                return (
+                                  <code
+                                    className="rounded bg-black/10 px-1 py-0.5 font-mono text-sm dark:bg-white/10"
+                                    {...props}
+                                  >
+                                    {children}
+                                  </code>
+                                )
+                              }
+
+                              return (
+                                <div className="my-2 max-w-full overflow-hidden rounded-lg border">
+                                  <div className="flex items-center justify-between bg-black/80 px-3 py-1 text-xs text-white/70">
+                                    <span>{match[1]}</span>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <SyntaxHighlighter
+                                      language={match[1]}
+                                      style={oneDark}
+                                      customStyle={{
+                                        margin: 0,
+                                        borderRadius: 0,
+                                      }}
+                                      PreTag="div"
+                                    >
+                                      {String(children).replace(/\n$/, "")}
+                                    </SyntaxHighlighter>
+                                  </div>
+                                </div>
+                              )
+                            },
+                          }}
+                        >
                           {part.text}
                         </ReactMarkDown>
                       </div>
@@ -134,7 +173,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            sendMessage({ text: input })
+            sendMessage({ text: input.trim() })
             setinput("")
           }}
         >

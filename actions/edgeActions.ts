@@ -1,19 +1,40 @@
 "use server"
 
+import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { CreateEdgeSchema, CreateEdgeType } from "@/types/edgeSchema"
+import { headers } from "next/headers"
 
 export async function insertEdge(data: CreateEdgeType) {
+  //authN
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    throw new Error("Unauthorised")
+  }
+
+  //validation
   const validFields = CreateEdgeSchema.safeParse(data)
-
-  console.log(data)
-  console.log(validFields)
-
   if (!validFields.success) {
     throw new Error("invlaid input data")
   }
 
-  await prisma.edge.create({
-    data: validFields.data,
+  const n = await prisma.node.count({
+    where: { canvasId: data.canvasId, id: { in: [data.sourceNodeId, data.targetNodeId] } },
+  })
+  if (n !== 2) throw new Error("invalid nodes")
+
+  await prisma.canvas.update({
+    where: { id: validFields.data.canvasId, userId: session.user.id },
+    data: {
+      edges: {
+        create: {
+          id: validFields.data.id,
+          sourceNodeId: validFields.data.sourceNodeId,
+          targetNodeId: validFields.data.targetNodeId,
+          branchPointMessageId: validFields.data.branchPointMessageId,
+          branchMessage: validFields.data.branchMessage,
+        },
+      },
+    },
   })
 }
