@@ -14,6 +14,7 @@ import {
   useNodesState,
   useReactFlow,
   ViewportPortal,
+  XYPosition,
 } from "@xyflow/react"
 import { useTheme } from "next-themes"
 import { appNodes, nodeTypes } from "../../components/reactflow/nodes"
@@ -44,14 +45,16 @@ import LeftSidebar from "@/components/LeftSidebar"
 import { Sheet } from "@/components/ui/sheet"
 import ChatSidebar from "@/components/chat-sidebar"
 import { disposeAllChats, disposeNodeChat } from "@/lib/chat-registry"
+import { LOADED_PROPS, LOADING_PROPS } from "@/types/nodeSchema"
 
-const handleNodeDrag: OnNodeDrag = async (event, node) => {
-  await updateNodePos({
-    nodeId: node.id,
-    posX: node.position.x,
-    posY: node.position.y,
-  })
-}
+// const handleNodeDrag: OnNodeDrag = async (event, node) => {
+//   const res = await updateNodePos({
+//     nodeId: node.id,
+//     posX: node.position.x,
+//     posY: node.position.y,
+//   })
+//   if(res)
+// }
 
 const page = ({
   rfnodes,
@@ -64,12 +67,19 @@ const page = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(rfnodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(rfedges)
   const { resolvedTheme } = useTheme()
-  const { screenToFlowPosition, getEdges, getZoom, getNodes } = useReactFlow()
+  const {
+    screenToFlowPosition,
+    getEdges,
+    getZoom,
+    getNode,
+    updateNode,
+    deleteElements,
+    updateEdge,
+  } = useReactFlow()
   const { selected, clear } = useSelection()
-  const { isMouse, sideViewNodeId, closeSideView } =
-    useCanvasStore()
-
+  const { isMouse, sideViewNodeId, closeSideView } = useCanvasStore()
   const freshStart = nodes.length === 0
+  const nodePosRef = useRef<XYPosition | null>(null)
 
   useEffect(() => () => disposeAllChats(), [id])
 
@@ -79,6 +89,40 @@ const page = ({
         ? screenToFlowPosition({ x: selected.rect.right, y: selected.rect.top })
         : null,
     [selected, screenToFlowPosition]
+  )
+
+  const handleNodeDragStart: OnNodeDrag = useCallback(
+    async (event, node) => {
+      console.log("start event", event)
+      console.log("start node", node.position)
+      nodePosRef.current = { x: node.position.x, y: node.position.y }
+    },
+    [nodes]
+  )
+
+  const handleNodeDragStop: OnNodeDrag = useCallback(
+    async (event, node) => {
+      console.log("event", event)
+      console.log("end node", node.position)
+
+      const res = await updateNodePos({
+        nodeId: node.id,
+        posX: node.position.x,
+        posY: node.position.y,
+      })
+
+      if (!res.ok) {
+        toast.error("Unable to update node position")
+        if (nodePosRef.current) {
+          updateNode(node.id, {
+            position: { x: nodePosRef.current.x, y: nodePosRef.current.y },
+          })
+          nodePosRef.current = null
+        }
+        return
+      }
+    },
+    [nodes]
   )
 
   const handleEdgeDrop: OnConnectEnd = useCallback(
@@ -94,7 +138,27 @@ const page = ({
           y: clientY,
         })
 
-        await insertNode({
+        setNodes((nodes) =>
+          nodes.concat({
+            id: nodeId,
+            position: positions,
+            dragHandle: ".custom_drag_handle",
+            ...nodeData,
+            ...LOADING_PROPS.node,
+          })
+        )
+
+        setEdges((eds) =>
+          eds.concat({
+            id: edgeId,
+            source: connectionState.fromNode.id,
+            target: nodeId,
+            className: "custom-edge",
+            ...LOADING_PROPS.edge,
+          })
+        )
+
+        const nodeRes = await insertNode({
           nodeId: nodeId,
           canvasId: id,
           posX: positions.x,
@@ -102,29 +166,39 @@ const page = ({
           ...nodeData,
         })
 
-        setNodes((nodes) =>
-          nodes.concat({
-            id: nodeId,
-            position: positions,
-            dragHandle: ".custom_drag_handle",
-            ...nodeData,
+        if (!nodeRes.ok) {
+          toast.error("Node creation failed")
+          await deleteElements({
+            nodes: [{ id: nodeId }],
+            edges: [{ id: edgeId }],
           })
-        )
+          return
+        }
 
-        await insertEdge({
+        const edgeRes = await insertEdge({
           id: edgeId,
           canvasId: id,
           sourceNodeId: connectionState.fromNode.id,
           targetNodeId: nodeId,
         })
-        setEdges((eds) =>
-          eds.concat({
-            id: edgeId,
-            source: connectionState.fromNode.id,
-            target: nodeId,
-            className: "custom-edge",
+
+        if (!edgeRes.ok) {
+          toast.error("Node creation failed")
+          await deleteElements({
+            nodes: [{ id: nodeId }],
+            edges: [{ id: edgeId }],
           })
-        )
+          await deleteNode({ nodeId: nodeId })
+          return
+        }
+
+        updateNode(nodeId, {
+          ...LOADED_PROPS.node,
+        })
+
+        updateEdge(edgeId, {
+          ...LOADED_PROPS.edge,
+        })
       }
     },
     [screenToFlowPosition]
@@ -154,21 +228,35 @@ const page = ({
         return
       }
 
-      await insertEdge({
-        id: edgeId,
-        canvasId: id,
-        sourceNodeId: source,
-        targetNodeId: target,
-      })
-
       setEdges((eds) =>
         eds.concat({
           id: edgeId,
           source: source,
           target: target,
           className: "custom-edge",
+          ...LOADING_PROPS.edge,
         })
       )
+
+      const edgeRes = await insertEdge({
+        id: edgeId,
+        canvasId: id,
+        sourceNodeId: source,
+        targetNodeId: target,
+      })
+
+      if (!edgeRes.ok) {
+        toast.error("Edge creation failed")
+        await deleteElements({
+          nodes: [],
+          edges: [{ id: edgeId }],
+        })
+        return
+      }
+
+      updateEdge(edgeId, {
+        ...LOADED_PROPS.edge,
+      })
     },
     [getEdges]
   )
@@ -182,7 +270,27 @@ const page = ({
     })
     const edgeId = createId()
 
-    await insertNode({
+    setNodes((nodes) =>
+      nodes.concat({
+        id: nodeId,
+        position: positions,
+        dragHandle: ".custom_drag_handle",
+        ...nodeData,
+        ...LOADING_PROPS.node,
+      })
+    )
+
+    setEdges((edges) =>
+      edges.concat({
+        id: edgeId,
+        source: selected.nodeId,
+        target: nodeId,
+        className: "custom-edge",
+        ...LOADING_PROPS.edge,
+      })
+    )
+
+    const nodeRes = await insertNode({
       nodeId: nodeId,
       canvasId: id,
       posX: positions.x,
@@ -190,16 +298,16 @@ const page = ({
       ...nodeData,
     })
 
-    setNodes((nodes) =>
-      nodes.concat({
-        id: nodeId,
-        position: positions,
-        dragHandle: ".custom_drag_handle",
-        ...nodeData,
+    if (!nodeRes.ok) {
+      toast.error("Node creation failed")
+      await deleteElements({
+        nodes: [{ id: nodeId }],
+        edges: [{ id: edgeId }],
       })
-    )
+      return
+    }
 
-    await insertEdge({
+    const edgeRes = await insertEdge({
       id: edgeId,
       canvasId: id,
       sourceNodeId: selected.nodeId,
@@ -208,32 +316,30 @@ const page = ({
       branchMessage: selected.text,
     })
 
-    setEdges((edges) =>
-      edges.concat({
-        id: edgeId,
-        source: selected.nodeId,
-        target: nodeId,
-        className: "custom-edge",
+    if (!edgeRes.ok) {
+      toast.error("Node creation failed")
+      await deleteElements({
+        nodes: [{ id: nodeId }],
+        edges: [{ id: edgeId }],
       })
-    )
+      await deleteNode({ nodeId: nodeId })
+      return
+    }
+
+    updateNode(nodeId, {
+      ...LOADED_PROPS.node,
+    })
+
+    updateEdge(edgeId, {
+      ...LOADED_PROPS.edge,
+    })
+
     clear()
   }, [])
 
-  const handleNodeClick: NodeMouseHandler = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      // console.log("nodeclick", event, node)
-      // // branchPostion.current = node.position
-      // console.log(node.className)
-    },
-    []
-  )
-
   return (
     <ReactFlow
-      // onPointerUp={handleGlobalSelection}
       debug={true}
-
-      onNodeClick={handleNodeClick}
       onNodeContextMenu={(e) => {
         e.preventDefault()
       }}
@@ -244,7 +350,8 @@ const page = ({
       fitView
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      onNodeDragStop={handleNodeDrag}
+      onNodeDragStart={handleNodeDragStart}
+      onNodeDragStop={handleNodeDragStop}
       onNodesDelete={(nodes) => {
         nodes.map(async (n) => {
           if (n.id === sideViewNodeId) closeSideView()

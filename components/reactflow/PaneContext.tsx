@@ -26,6 +26,8 @@ import {
   Type,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+import { LOADED_PROPS, LOADING_PROPS } from "@/types/nodeSchema"
 
 const themeIcons = {
   light: <Sun />,
@@ -35,7 +37,8 @@ const themeIcons = {
 
 const PaneContext = () => {
   const { id } = useParams<{ id: string }>()
-  const { screenToFlowPosition, addNodes } = useReactFlow()
+  const { screenToFlowPosition, addNodes, updateNode, deleteElements } =
+    useReactFlow()
   const flowPositions = useRef({ x: 0, y: 0 })
   const { theme, setTheme, themes } = useTheme()
 
@@ -56,19 +59,31 @@ const PaneContext = () => {
   const createNode = async (type: NodeType) => {
     const nodeId = createId()
     const data = createNodeData(type)
-    console.log(data)
-    await insertNode({
+
+    addNodes({
+      id: nodeId,
+      dragHandle: ".custom_drag_handle",
+      ...LOADING_PROPS.node,
+      position: { x: flowPositions.current.x, y: flowPositions.current.y },
+      ...data,
+    })
+
+    const res = await insertNode({
       canvasId: id,
       nodeId: nodeId,
       posX: flowPositions.current.x,
       posY: flowPositions.current.y,
       ...data,
     })
-    addNodes({
-      id: nodeId,
-      dragHandle: ".custom_drag_handle",
-      position: { x: flowPositions.current.x, y: flowPositions.current.y },
-      ...data,
+
+    if (!res.ok) {
+      toast.error(res.error)
+      await deleteElements({ nodes: [{ id: nodeId }], edges: [] })
+      return
+    }
+
+    updateNode(nodeId, {
+      ...LOADED_PROPS.node,
     })
   }
 
@@ -77,15 +92,15 @@ const PaneContext = () => {
       <ContextMenuGroup>
         <ContextMenuLabel>Create Node</ContextMenuLabel>
         <ContextMenuItem
-          onClick={() => {
-            createNode("chat")
+          onClick={async () => {
+            await createNode("chat")
           }}
         >
           <BotMessageSquare /> Chat
         </ContextMenuItem>
         <ContextMenuItem
-          onClick={() => {
-            createNode("text")
+          onClick={async () => {
+            await createNode("text")
           }}
         >
           <Type /> Text

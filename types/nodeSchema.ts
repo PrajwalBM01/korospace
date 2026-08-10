@@ -8,42 +8,6 @@ import {
   WebNodeDataSchema,
 } from "@/components/reactflow/nodes/index"
 
-// export const webFetchStatus = z.enum(["read", "pending", "failed"])
-// export type Webstatus = z.infer<typeof webFetchStatus>
-
-// export const nodeDataSchemas = {
-//   chat: z.object({
-//     title: z.string(),
-//     nodeData: z.object({ model: z.string() }).nullable,
-//   }),
-//   text: z.object({
-//     title: z.string(),
-//     nodeData: z.object({ content: z.string }).nullable(),
-//   }),
-//   web: z.object({
-//     title: z.string(),
-//     nodeData: z.object({
-//       url: z.url(),
-//       status: webFetchStatus,
-//       content: z.string(),
-//       fetchedAt: z.date(),
-//     }).nullable,
-//   }),
-// } satisfies Record<NodeType, z.ZodType>
-
-// export type NodeDataMap = {
-//   [K in NodeType]: z.infer<(typeof nodeDataSchemas)[K]>
-// }
-
-// export const nodeDefaults: { [K in NodeType]: () => NodeDataMap[K] } = {
-//   chat: () => ({
-//     title: "Untitled Chat",
-//     nodeData: { model: "gemini-2.5-flash" },
-//   }),
-//   text: () => ({ title: "Untitled Text", nodeData: null }),
-//   web: () => ({ title: "Untitled Web", nodeData: null }),
-// }
-
 export const UpdateNodePosSchema = z.object({
   nodeId: z.string(),
   posX: z.number(),
@@ -91,3 +55,32 @@ export const DeleteNodeSchema = z.object({
 })
 
 export type deleteNodeType = z.infer<typeof DeleteNodeSchema>
+
+export type ActionResult =
+  { ok: true; msg: string } | { ok: false; error: string }
+
+export const LOADING_PROPS = {
+  node: {
+    draggable: false,
+    selectable: false,
+    connectable: false,
+    style: { opacity: 0.5, cursor: "not-allowed", pointerEvents: undefined },
+  },
+  edge: {
+    style: { opacity: 0.2, strokeDasharray: "5, 5" },
+    selectable: false,
+  },
+}
+
+export const LOADED_PROPS = {
+  node: {
+    draggable: true,
+    selectable: true,
+    connectable: true,
+    style: undefined,
+  },
+  edge: {
+    style: undefined,
+    selectable: true,
+  },
+}
