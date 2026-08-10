@@ -54,7 +54,7 @@ const toAppNode = (n: NodeCombined): appNodes | null => {
 
     case "chat": {
       const parsed = ChatNodeDataSchema.safeParse(n.data)
-      console.log(parsed)
+
       if (!parsed.success) {
         console.error(`node ${n.id} has invalid data`, parsed.error.issues)
         return null

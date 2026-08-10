@@ -85,8 +85,6 @@ const page = ({
 
   const handleNodeDragStart: OnNodeDrag = useCallback(
     async (event, node) => {
-      console.log("start event", event)
-      console.log("start node", node.position)
       nodePosRef.current = { x: node.position.x, y: node.position.y }
     },
     [nodes]
@@ -94,9 +92,6 @@ const page = ({
 
   const handleNodeDragStop: OnNodeDrag = useCallback(
     async (event, node) => {
-      console.log("event", event)
-      console.log("end node", node.position)
-
       const res = await updateNodePos({
         nodeId: node.id,
         posX: node.position.x,
@@ -340,10 +335,10 @@ const page = ({
       edges={edges}
       nodeTypes={nodeTypes}
       fitView
-      onNodeClick={(event, node) => {
+      onNodeDoubleClick={(_event, node) => {
         fitView({
           nodes: [node],
-          duration: 300,
+          duration: 600,
           padding: 0.5,
         })
       }}

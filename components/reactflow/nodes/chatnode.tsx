@@ -27,6 +27,8 @@ import remarkGfm from "remark-gfm"
 import { deleteNode } from "@/actions/nodeActions"
 import { useCanvasStore } from "@/store/canvasStore"
 import { NodeStatusIndicator } from "@/components/node-status-indicator"
+import { Button } from "@/components/ui/button"
+import { DotmTriangle20 } from "@/components/ui/dotm-triangle-20"
 
 const chatnode = (props: NodeProps<chatNode>) => {
   const { openSideView, sideViewNodeId, closeSideView } = useCanvasStore()
@@ -57,7 +59,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
           />
           <div className="flex items-center justify-center gap-2 rounded-lg p-1 shadow-[0px_0px_2px_1px_rgba(0,0,0,0.1)] dark:border">
             <BotMessageSquare strokeWidth={1.5} />
-            <h1 className="text-xl font-medium">{props.data.title}</h1>
+            <h1 className="text-xl font-medium">CHAT</h1>
           </div>
           <div className="absolute right-4 flex items-center justify-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
             <div
@@ -124,7 +126,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
                           className={cn(
                             "relative min-w-0 overflow-hidden rounded-xl p-2 whitespace-pre-wrap",
                             message.role === "user"
-                              ? "w-2/3 bg-card"
+                              ? "field-sizing-content w-2/3 bg-card"
                               : "text-start"
                           )}
                         >
@@ -179,6 +181,23 @@ const chatnode = (props: NodeProps<chatNode>) => {
                 })}
               </div>
             ))}
+            {status === "submitted" && (
+              <DotmTriangle20
+                size={25}
+                dotSize={5}
+                speed={1.45}
+                pattern="full"
+                color="oklch(0.841 0.238 128.85)"
+                animated
+                halo={0.15}
+                opacityBase={0.05}
+                opacityMid={0.18}
+                opacityPeak={1}
+              />
+            )}
+            {status === "error" && (
+              <p className="text-xs text-destructive">Something went wrong</p>
+            )}
           </div>
           <form
             onSubmit={(e) => {
@@ -193,6 +212,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault()
+                  if (input.length < 1) return
                   e.currentTarget.form?.requestSubmit()
                 }
               }}
@@ -219,18 +239,18 @@ const chatnode = (props: NodeProps<chatNode>) => {
                 </Select>
               </div>
               <div>
-                <button
-                  disabled={status === "streaming" ? true : false}
-                  type="submit"
-                  className={cn(
-                    "rounded-lg p-1 text-black",
-                    status === "streaming"
-                      ? "bg-primary-foreground"
-                      : "bg-primary"
-                  )}
+                <Button
+                  disabled={
+                    status === "submitted" ||
+                    status === "streaming" ||
+                    input.length < 1
+                      ? true
+                      : false
+                  }
+                  className="rounded-lg text-black"
                 >
                   <ArrowUp size={25} />
-                </button>
+                </Button>
               </div>
             </div>
           </form>

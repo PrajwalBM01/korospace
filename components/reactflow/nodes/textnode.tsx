@@ -49,15 +49,15 @@ const textnode = (props: NodeProps<textNode>) => {
           {/* <div className="rounded-lg border p-1">{props.data.title}</div> */}
           <div className="flex items-center justify-center gap-2 rounded-lg px-1 shadow-[0px_0px_2px_1px_rgba(0,0,0,0.1)] dark:border">
             <Type strokeWidth={1.5} />
-            <input
+            {/* <input
               type="text"
               className="field-sizing-content max-w-50 truncate rounded-sm text-xl font-medium outline-0 focus:outline-0"
               value={title.length === 0 ? "Untitled" : title}
               onChange={(e) => {
                 settitle(e.target.value)
               }}
-            />
-            {/* <h1 className="text-xl font-medium">{props.data.title}</h1> */}
+            /> */}
+            <h1 className="text-xl font-medium">TEXT</h1>
           </div>
           <div className="flex items-center justify-center gap-2 px-1 opacity-0 transition-all duration-300 group-hover:opacity-100">
             <div title="Delete">

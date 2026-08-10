@@ -32,7 +32,6 @@ const resolveTarget = (range: Range) => {
   if (!nodeId) return null
 
   const messageEl = el.closest<HTMLElement>("[data-item-id]")
-  console.log(messageEl?.dataset)
   return {
     nodeId,
     messageId: messageEl?.dataset.itemId ?? null,
@@ -60,7 +59,6 @@ export function useSelection() {
       const cleanedText = text.replace(/\n+/g, " ")
 
       const range = sel.getRangeAt(0)
-      console.log("range", range)
       const target = resolveTarget(range)
       if (!target || target.messageRole !== "assistant") {
         setSelected(null)

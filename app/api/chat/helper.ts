@@ -104,23 +104,17 @@ export async function getContext(nodeId: string, dbMessages: UIMessage[]) {
   let sources = ``
 
   for (const id of ancestors) {
-    console.log("reaching here")
-    console.log("id", id)
-    console.log(arrangeAncestors)
     const node = arrangeAncestors.get(id)
-    console.log("node", node)
     if (!node) continue
 
     //text node
     if (node.type === "text") {
-      console.log("text node reaching")
       const data = TextNodeDataSchema.parse(node.data)
       sources += ` <source type=${node.type}>${data.content}</source>`
     }
 
     //chat node
     if (node.type === "chat") {
-      console.log("chat node reahcing")
       let chatContent = ``
       const cutoff = cutoffs.get(node.id) ?? null
       const msgs = cutoff
@@ -151,7 +145,6 @@ export async function getContext(nodeId: string, dbMessages: UIMessage[]) {
       sources += `<source type=${node.type} snapshot=${cutoff ? true : false}>${chatContent}</source>`
     }
   }
-  console.log("sourrces", sources)
 
   return `The user works in a non-linear canvas where conversations and documents exist as connected nodes. The sources below are upstream of the current conversation and were connected by the user as relevant background. They are ordered from earliest to most immediate — later sources generally build on earlier ones.
   How to use them:
