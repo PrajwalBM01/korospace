@@ -47,15 +47,6 @@ import ChatSidebar from "@/components/chat-sidebar"
 import { disposeAllChats, disposeNodeChat } from "@/lib/chat-registry"
 import { LOADED_PROPS, LOADING_PROPS } from "@/types/nodeSchema"
 
-// const handleNodeDrag: OnNodeDrag = async (event, node) => {
-//   const res = await updateNodePos({
-//     nodeId: node.id,
-//     posX: node.position.x,
-//     posY: node.position.y,
-//   })
-//   if(res)
-// }
-
 const page = ({
   rfnodes,
   rfedges,
@@ -75,6 +66,7 @@ const page = ({
     updateNode,
     deleteElements,
     updateEdge,
+    fitView,
   } = useReactFlow()
   const { selected, clear } = useSelection()
   const { isMouse, sideViewNodeId, closeSideView } = useCanvasStore()
@@ -348,6 +340,13 @@ const page = ({
       edges={edges}
       nodeTypes={nodeTypes}
       fitView
+      onNodeClick={(event, node) => {
+        fitView({
+          nodes: [node],
+          duration: 300,
+          padding: 0.5,
+        })
+      }}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeDragStart={handleNodeDragStart}
