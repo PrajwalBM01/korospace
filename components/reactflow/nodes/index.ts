@@ -4,7 +4,7 @@ import type { Message as DbMessage } from "@/app/generated/prisma/client"
 import textnode from "./textnode"
 import webnode from "./webnode"
 import { z } from "zod"
-import { MessageSchema } from "@/app/generated/zod/schemas/models"
+import { MessageSchema } from "@/app/generated/zod/schemas/models/Message.schema"
 
 enum status {
   read,

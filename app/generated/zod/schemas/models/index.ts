@@ -11,3 +11,6 @@ export { UserSchema } from './User.schema';
 export { SessionSchema } from './Session.schema';
 export { AccountSchema } from './Account.schema';
 export { VerificationSchema } from './Verification.schema';
+export { ModelSchema } from './Model.schema';
+export { ModelRouteSchema } from './ModelRoute.schema';
+export { UserProviderKeySchema } from './UserProviderKey.schema';

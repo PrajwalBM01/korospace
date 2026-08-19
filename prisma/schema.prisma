@@ -16,7 +16,6 @@ generator zod {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 enum NodeType {
@@ -31,11 +30,34 @@ enum Role {
   system
 }
 
+enum ModelProvider {
+  OPENROUTER
+  ANTHROPIC
+  GOOGLE
+  OPENAI
+}
+
+enum ModelStatus {
+  ACTIVE
+  DEPRECATED
+  RETIRED
+}
+
+enum PlanTier {
+  FREE
+  PAID
+}
+
+enum CredentialSource {
+ PLATFORM
+ BYOK
+}
+
 model Canvas {
   id        String   @id @default(cuid())
   title     String?
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   nodes     Node[]
   edges     Edge[]
   createdAt DateTime @default(now())
@@ -99,6 +121,15 @@ model User {
   accounts      Account[]
   canvases      Canvas[]
 
+//apikeys
+    providerKeys UserProviderKey[]
+  planTier PlanTier @default(FREE)
+
+  role       String?
+  banned     Boolean?  @default(false)
+  banReason  String?
+  banExpires DateTime?
+
   @@unique([email])
   @@map("user")
 }
@@ -113,6 +144,8 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
 
   @@unique([token])
   @@index([userId])
@@ -135,8 +168,11 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  issuer String
+
   @@index([userId])
   @@map("account")
+  @@unique([issuer, accountId], map: "account_issuer_accountId_uidx")
 }
 
 model Verification {
@@ -149,4 +185,63 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Model {
+  id String @id @default(cuid())
+  slug String @unique
+  authorName String
+  family String?
+  description String?
+  routes ModelRoute[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorName])
+}
+
+model ModelRoute {
+  id String @id @default(cuid())
+  modelId String
+  model Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  provider ModelProvider
+  providerModelId String
+
+  //pricing
+  inputPricePerM       Decimal? @db.Decimal(12, 4)
+  outputPricePerM      Decimal? @db.Decimal(12, 4)
+  currency String @default("USD")
+
+  //capablities
+  contextWindow Int?
+  maxOutputTokens Int?
+
+  //access-policy
+  platformEnabled Boolean @default(false)
+  byokEnabled Boolean @default(true)
+  status ModelStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerModelId])
+  @@index([modelId, status])
+  @@index([provider, status])
+}
+
+model UserProviderKey {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id],onDelete: Cascade)
+  provider ModelProvider
+
+  ciphertext String
+  iv String
+  authTag String
+  fingerprint String
+
+  isValid Boolean @default(true)
+
+  @@unique([userId, provider])
+  @@unique([userId, fingerprint])
+  @@index([userId])
 }

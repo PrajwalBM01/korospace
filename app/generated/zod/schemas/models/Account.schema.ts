@@ -14,6 +14,7 @@ export const AccountSchema = z.object({
   password: z.string().nullish(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  issuer: z.string(),
 });
 
 export type AccountType = z.infer<typeof AccountSchema>;
