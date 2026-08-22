@@ -6,7 +6,12 @@ import {
   UIMessage,
 } from "ai"
 import { NextRequest, NextResponse } from "next/server"
-import { checkModelUsablity, getContext, loadMessages } from "./helper"
+import {
+  checkModelUsablity,
+  getContext,
+  getStreamModel,
+  loadMessages,
+} from "./helper"
 import { saveAssistantMessage, saveUserMessage } from "@/actions/chatActions"
 import { createId } from "@paralleldrive/cuid2"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
@@ -38,6 +43,7 @@ const ChatRequestSchema = z.object({
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 })
+
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers })
   if (!session) {
@@ -56,8 +62,6 @@ export async function POST(req: NextRequest) {
 
   const { nodeId, message, modelDetails } = parsed.data
 
-  console.log(nodeId, message, modelDetails)
-
   const modelUsablityCheck = await checkModelUsablity(
     modelDetails,
     session.user.id
@@ -69,11 +73,11 @@ export async function POST(req: NextRequest) {
       { status: modelUsablityCheck.error.status }
     )
   }
+  const { apiKey, modelId, provider } = modelUsablityCheck.data
 
-  const canUseModel = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { planTier: true, providerKeys: true },
-  })
+  const streamModel = getStreamModel({ provider, modelId, apiKey })
+
+  console.log(streamModel)
 
   const node = await prisma.node.findFirst({
     where: { id: nodeId, canvas: { userId: session.user.id } },
@@ -102,10 +106,12 @@ export async function POST(req: NextRequest) {
   const aiId = createId()
 
   const result = streamText({
-    model: openrouter.chat("openrouter/free"),
+    model: streamModel,
     instructions: system,
     messages: await convertToModelMessages(dbMessages),
   })
+
+  console.log(await result.finalStep)
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({

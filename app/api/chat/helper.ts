@@ -1,12 +1,19 @@
 import { Edge, ModelProvider } from "@/app/generated/prisma/client"
 import { modelType, TextNodeDataSchema } from "@/components/reactflow/nodes"
 import prisma from "@/lib/prisma"
-import { UIMessage } from "ai"
+import {
+  createOpenRouter,
+  OpenRouterProviderSettings,
+} from "@openrouter/ai-sdk-provider"
+import { createOpenAI, OpenAIProviderSettings } from "@ai-sdk/openai"
+import { AnthropicProviderSettings, createAnthropic } from "@ai-sdk/anthropic"
+import { createGoogle, GoogleProviderSettings } from "@ai-sdk/google"
+import { Provider, UIMessage } from "ai"
 import { NextResponse } from "next/server"
+import { decryptKey } from "@/actions/actionHeper"
 
-export type ModelUsablityResult =
-  | { ok: true; msg: string }
-  | { ok: false; error: { msg: string; status: number } }
+export type ModelUsablityResult<T> =
+  { ok: true; data: T } | { ok: false; error: { msg: string; status: number } }
 
 export async function loadMessages(nodeId: string): Promise<UIMessage[]> {
   const messages = await prisma.message.findMany({
@@ -168,7 +175,14 @@ export async function getContext(nodeId: string, dbMessages: UIMessage[]) {
 export async function checkModelUsablity(
   modelDetails: modelType,
   userId: string
-): Promise<ModelUsablityResult> {
+): Promise<
+  ModelUsablityResult<{
+    modelId: string
+    apiKey: string
+    provider: ModelProvider
+  }>
+> {
+  let apiKey = ""
   const modelExist = await prisma.modelRoute.findFirst({
     where: { modelId: modelDetails.modelId },
   })
@@ -205,9 +219,13 @@ export async function checkModelUsablity(
         error: { msg: "Get pro to access this model", status: 400 },
       }
     }
+    apiKey = String(process.env.OPENROUTER_API_KEY)
   }
 
+  const author = modelDetails.author.toUpperCase() as ModelProvider
+
   if (modelDetails.source === "BYOK") {
+    const keylist = userDetails?.providerKeys.map((k) => k.provider)
     //enabled?
     if (!modelExist.byokEnabled) {
       return { ok: false, error: { msg: "Model does not found", status: 402 } }
@@ -218,13 +236,55 @@ export async function checkModelUsablity(
       return { ok: false, error: { msg: "No keys configured", status: 400 } }
     }
 
-    const keylist = userDetails?.providerKeys.map((k) => k.provider)
-    const author = modelDetails.author.toUpperCase() as ModelProvider
-
     if (!keylist?.includes(author)) {
       return { ok: false, error: { msg: "key not configured", status: 400 } }
     }
+    const providerKeyDetials = userDetails?.providerKeys.find(
+      (p) => p.provider === author
+    )
+  
+    if (!providerKeyDetials) {
+      return { ok: false, error: { msg: "key not configured", status: 400 } }
+    }
+
+    apiKey = decryptKey(providerKeyDetials)
   }
 
-  return { ok: true, msg: "good to go" }
+
+  return {
+    ok: true,
+    data: {
+      apiKey: apiKey,
+      modelId: modelDetails.modelId,
+      provider:
+        modelDetails.source === "PLATFORM" ? ModelProvider.OPENROUTER : author,
+    },
+  }
+}
+
+export const getStreamModel = ({
+  provider,
+  apiKey,
+  modelId,
+}: {
+  provider: ModelProvider
+  apiKey: string
+  modelId: string
+}) => {
+  switch (provider) {
+    case "OPENROUTER":
+      const openrouter = createOpenRouter({ apiKey: apiKey })
+      return openrouter.chat(modelId)
+    case "OPENAI":
+      const openai = createOpenAI({ apiKey: apiKey })
+      return openai(modelId)
+    case "GOOGLE":
+      const google = createGoogle({ apiKey: apiKey })
+      return google(modelId)
+    case "ANTHROPIC":
+      const anthropic = createAnthropic({ apiKey: apiKey })
+      return anthropic(modelId)
+    default:
+      throw new Error(`Unsupported provider: ${provider}`)
+  }
 }

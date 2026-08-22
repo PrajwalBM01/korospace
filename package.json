@@ -21,7 +21,9 @@
     "models:sync": "tsx scripts/sync-models.ts --write"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.9",
+    "@ai-sdk/anthropic": "^4.0.41",
+    "@ai-sdk/google": "^4.0.50",
+    "@ai-sdk/openai": "^4.0.46",
     "@ai-sdk/react": "^4.0.18",
     "@better-auth/prisma-adapter": "^1.7.1",
     "@openrouter/ai-sdk-provider": "^3.0.0",
