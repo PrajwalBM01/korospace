@@ -6,6 +6,8 @@ import {
   createNodeType,
   DeleteNodeSchema,
   deleteNodeType,
+  switchNodeModelSchema,
+  switchNodeModelType,
   UpdateNodePosSchema,
   updateNodePosType,
   updateTextNodeSchema,
@@ -134,6 +136,36 @@ export async function deleteNode(data: deleteNodeType): Promise<ActionResult> {
     // if (e instanceof Prisma.PrismaClientKnownRequestError) {
     //   if (e.code === "P2025") return { ok: false, error: "Node not found" }
     // }
+    console.error("error occueered", e)
+    return { ok: false, error: "Cound not create the node" }
+  }
+}
+
+export async function switchNodeModel(
+  data: switchNodeModelType
+): Promise<ActionResult> {
+  //authN
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) return { ok: false, error: "Please sign in again." }
+
+  //validation
+  const validFields = switchNodeModelSchema.safeParse(data)
+  if (!validFields.success) return { ok: false, error: "Invalid model data." }
+
+  //authz and query
+  try {
+    await prisma.node.update({
+      where: {
+        id: validFields.data.nodeId,
+        canvas: { userId: session.user.id },
+      },
+      data: {
+        data: validFields.data.data,
+      },
+    })
+
+    return { ok: true, msg: "Model chaged" }
+  } catch (e) {
     console.error("error occueered", e)
     return { ok: false, error: "Cound not create the node" }
   }

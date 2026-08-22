@@ -1,7 +1,12 @@
-import { Edge } from "@/app/generated/prisma/client"
-import { TextNodeDataSchema } from "@/components/reactflow/nodes"
+import { Edge, ModelProvider } from "@/app/generated/prisma/client"
+import { modelType, TextNodeDataSchema } from "@/components/reactflow/nodes"
 import prisma from "@/lib/prisma"
 import { UIMessage } from "ai"
+import { NextResponse } from "next/server"
+
+export type ModelUsablityResult =
+  | { ok: true; msg: string }
+  | { ok: false; error: { msg: string; status: number } }
 
 export async function loadMessages(nodeId: string): Promise<UIMessage[]> {
   const messages = await prisma.message.findMany({
@@ -158,4 +163,68 @@ export async function getContext(nodeId: string, dbMessages: UIMessage[]) {
   </sources>
   The conversation that follows is the current node's own thread — that is the live exchange you are participating in.
   `
+}
+
+export async function checkModelUsablity(
+  modelDetails: modelType,
+  userId: string
+): Promise<ModelUsablityResult> {
+  const modelExist = await prisma.modelRoute.findFirst({
+    where: { modelId: modelDetails.modelId },
+  })
+  if (!modelExist) {
+    return { ok: false, error: { msg: "Model does not found", status: 402 } }
+  }
+
+  //get user detials
+  const userDetails = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      planTier: true,
+      providerKeys: true,
+    },
+  })
+
+  //source verification
+  if (modelDetails.source === "PLATFORM") {
+    //enabled?
+    if (!modelExist.platformEnabled) {
+      return { ok: false, error: { msg: "Model does not found", status: 400 } }
+    }
+
+    //check user tier
+    if (
+      userDetails?.planTier === "FREE" &&
+      !(
+        Number(modelExist.inputPricePerM) === 0 &&
+        Number(modelExist.outputPricePerM) === 0
+      )
+    ) {
+      return {
+        ok: false,
+        error: { msg: "Get pro to access this model", status: 400 },
+      }
+    }
+  }
+
+  if (modelDetails.source === "BYOK") {
+    //enabled?
+    if (!modelExist.byokEnabled) {
+      return { ok: false, error: { msg: "Model does not found", status: 402 } }
+    }
+
+    //key configerd?
+    if (userDetails?.providerKeys.length === 0) {
+      return { ok: false, error: { msg: "No keys configured", status: 400 } }
+    }
+
+    const keylist = userDetails?.providerKeys.map((k) => k.provider)
+    const author = modelDetails.author.toUpperCase() as ModelProvider
+
+    if (!keylist?.includes(author)) {
+      return { ok: false, error: { msg: "key not configured", status: 400 } }
+    }
+  }
+
+  return { ok: true, msg: "good to go" }
 }

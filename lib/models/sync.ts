@@ -45,12 +45,27 @@ export async function syncModels(
   const openrouter = await fetchOpenRouterModels()
   log(`OPENROUTER  ${openrouter.length} models`)
 
-  const anthropic = await safe<DirectModel[]>("ANTHROPIC", "ANTHROPIC_API_KEY", fetchAnthropicModels, log)
-  const openai    = await safe<DirectModel[]>("OPENAI",    "OPENAI_API_KEY",    fetchOpenAiModels,    log)
-  const google    = await safe<DirectModel[]>("GOOGLE",    "GOOGLE_AI_API_KEY", fetchGoogleModels,    log)
+  const anthropic = await safe<DirectModel[]>(
+    "ANTHROPIC",
+    "ANTHROPIC_API_KEY",
+    fetchAnthropicModels,
+    log
+  )
+  const openai = await safe<DirectModel[]>(
+    "OPENAI",
+    "OPENAI_API_KEY",
+    fetchOpenAiModels,
+    log
+  )
+  const google = await safe<DirectModel[]>(
+    "GOOGLE",
+    "GOOGLE_AI_API_KEY",
+    fetchGoogleModels,
+    log
+  )
 
   const plan = buildPlan({ openrouter, anthropic, openai, google })
-  log(`PLAN  ${plan.models.length} models, ${plan.routes.length} routes`)
+  log(`PLAN  ${plan.models.length} models.`)
 
   if (options.dryRun) {
     log("(dry run — nothing written)")
@@ -59,7 +74,7 @@ export async function syncModels(
 
   const result = await applyPlan(plan)
   log(
-    `WROTE ${result.models} models, ${result.routes} routes ` +
+    `WROTE ${result.models} models` +
       `(${result.reactivated} reactivated, ${result.deprecated} deprecated)`
   )
 

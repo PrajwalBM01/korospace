@@ -15,20 +15,15 @@ import {
   Trash,
 } from "lucide-react"
 import { disposeNodeChat, getNodeChat } from "@/lib/chat-registry"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import remarkGfm from "remark-gfm"
 import { deleteNode } from "@/actions/nodeActions"
 import { useCanvasStore } from "@/store/canvasStore"
 import { NodeStatusIndicator } from "@/components/node-status-indicator"
 import { Button } from "@/components/ui/button"
 import { DotmTriangle20 } from "@/components/ui/dotm-triangle-20"
+import ModelSelector from "../ModelSelector"
+import { modelType } from "@/components/reactflow/nodes/index"
 
 const chatnode = (props: NodeProps<chatNode>) => {
   const { openSideView, sideViewNodeId, closeSideView } = useCanvasStore()
@@ -39,6 +34,11 @@ const chatnode = (props: NodeProps<chatNode>) => {
     [props.id]
   )
   const { messages, sendMessage, status } = useChat({ chat })
+  const [model, setmodel] = useState<modelType>({
+    source: props.data.model.source,
+    author: props.data.model.author,
+    modelId: props.data.model.modelId,
+  })
 
   return (
     <NodeStatusIndicator
@@ -202,7 +202,18 @@ const chatnode = (props: NodeProps<chatNode>) => {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              sendMessage({ text: input.trim() })
+              sendMessage(
+                { text: input.trim() },
+                {
+                  body: {
+                    modelDetails: {
+                      source: model?.source ?? "",
+                      author: model?.author ?? "",
+                      modelId: model?.modelId ?? "",
+                    },
+                  },
+                }
+              )
               setinput("")
             }}
           >
@@ -225,18 +236,17 @@ const chatnode = (props: NodeProps<chatNode>) => {
             />
             <div className="flex items-center justify-between p-1">
               <div>
-                <Select>
-                  <SelectTrigger className="">
-                    <SelectValue placeholder="Auto" />
-                  </SelectTrigger>
-                  <SelectContent className="border-none bg-transparent">
-                    <SelectGroup>
-                      <SelectItem value="light">Gemini</SelectItem>
-                      <SelectItem value="dark">claude</SelectItem>
-                      <SelectItem value="system">chatgpt</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <ModelSelector
+                  nodeId={props.id}
+                  onSelect={(model, source) =>
+                    setmodel({
+                      modelId: model.modelId,
+                      author: model.author,
+                      source: source,
+                    })
+                  }
+                  model={model}
+                />
               </div>
               <div>
                 <Button

@@ -37,7 +37,7 @@ export const CreateNodeSchema = z.discriminatedUnion("type", [
   z.object({
     ...baseNodeFields,
     type: z.literal(NodeType.chat),
-    data: ChatNodeDataSchema,
+    data: ChatNodeDataSchema.omit({ messages: true }),
   }),
 ])
 
@@ -55,6 +55,13 @@ export const DeleteNodeSchema = z.object({
 })
 
 export type deleteNodeType = z.infer<typeof DeleteNodeSchema>
+
+export const switchNodeModelSchema = z.object({
+  nodeId: z.string(),
+  data: ChatNodeDataSchema.omit({ messages: true }),
+})
+
+export type switchNodeModelType = z.infer<typeof switchNodeModelSchema>
 
 export type ActionResult =
   { ok: true; msg: string } | { ok: false; error: string }

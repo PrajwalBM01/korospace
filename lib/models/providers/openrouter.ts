@@ -16,8 +16,21 @@ function isChatModel(m: OpenRouterModel): boolean {
   )
 }
 
+const EXCLUDE = [
+  "xiaomi",
+  "tencent",
+  "deepseek",
+  "nex-agi",
+  "aion-labs",
+  "nvidia",
+  "liquid",
+]
+
 export async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
   const raw = await getJson(OPENROUTER_MODELS_URL)
   const { data } = OpenRouterResponseSchema.parse(raw)
-  return data.filter(isChatModel)
+  return data
+    .filter(isChatModel)
+    .filter((m) => !m.id.startsWith("~"))
+    .filter((m) => !EXCLUDE.includes(m.id.split("/")[0]))
 }

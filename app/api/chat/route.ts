@@ -6,7 +6,7 @@ import {
   UIMessage,
 } from "ai"
 import { NextRequest, NextResponse } from "next/server"
-import { getContext, loadMessages } from "./helper"
+import { checkModelUsablity, getContext, loadMessages } from "./helper"
 import { saveAssistantMessage, saveUserMessage } from "@/actions/chatActions"
 import { createId } from "@paralleldrive/cuid2"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
@@ -14,6 +14,7 @@ import z from "zod"
 import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { Prisma } from "@/app/generated/prisma/client"
+import { modelSchema } from "@/components/reactflow/nodes/index"
 
 export const runtime = "nodejs"
 
@@ -31,6 +32,7 @@ const ChatRequestSchema = z.object({
       .min(1)
       .max(1),
   }),
+  modelDetails: modelSchema,
 })
 
 const openrouter = createOpenRouter({
@@ -45,13 +47,33 @@ export async function POST(req: NextRequest) {
   const incoming = await req.json().catch(() => null)
   if (!incoming)
     return NextResponse.json({ error: "Malformed JSON" }, { status: 400 })
+  console.log(incoming)
 
   const parsed = ChatRequestSchema.safeParse(incoming)
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid Request" }, { status: 400 })
   }
 
-  const { nodeId, message } = parsed.data
+  const { nodeId, message, modelDetails } = parsed.data
+
+  console.log(nodeId, message, modelDetails)
+
+  const modelUsablityCheck = await checkModelUsablity(
+    modelDetails,
+    session.user.id
+  )
+
+  if (!modelUsablityCheck.ok) {
+    return NextResponse.json(
+      { error: modelUsablityCheck.error.msg },
+      { status: modelUsablityCheck.error.status }
+    )
+  }
+
+  const canUseModel = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { planTier: true, providerKeys: true },
+  })
 
   const node = await prisma.node.findFirst({
     where: { id: nodeId, canvas: { userId: session.user.id } },
@@ -80,7 +102,7 @@ export async function POST(req: NextRequest) {
   const aiId = createId()
 
   const result = streamText({
-    model: openrouter.chat("google/gemma-4-26b-a4b-it:free"),
+    model: openrouter.chat("openrouter/free"),
     instructions: system,
     messages: await convertToModelMessages(dbMessages),
   })
@@ -104,8 +126,6 @@ export async function POST(req: NextRequest) {
           text: text,
         })
       },
-
     }),
-    
   })
 }

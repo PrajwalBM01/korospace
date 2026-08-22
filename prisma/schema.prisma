@@ -48,10 +48,6 @@ enum PlanTier {
   PAID
 }
 
-enum CredentialSource {
- PLATFORM
- BYOK
-}
 
 model Canvas {
   id        String   @id @default(cuid())
@@ -122,7 +118,7 @@ model User {
   canvases      Canvas[]
 
 //apikeys
-    providerKeys UserProviderKey[]
+  providerKeys UserProviderKey[]
   planTier PlanTier @default(FREE)
 
   role       String?
@@ -187,25 +183,17 @@ model Verification {
   @@map("verification")
 }
 
-model Model {
-  id String @id @default(cuid())
-  slug String @unique
-  authorName String
-  family String?
-  description String?
-  routes ModelRoute[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([authorName])
-}
 
 model ModelRoute {
   id String @id @default(cuid())
+
+  //model detials
+  modelName String @unique
+  displayName String
+  author String
   modelId String
-  model Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  description String?
   provider ModelProvider
-  providerModelId String
 
   //pricing
   inputPricePerM       Decimal? @db.Decimal(12, 4)
@@ -218,12 +206,12 @@ model ModelRoute {
 
   //access-policy
   platformEnabled Boolean @default(false)
-  byokEnabled Boolean @default(true)
+  byokEnabled Boolean @default(false)
   status ModelStatus @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([provider, providerModelId])
+  @@unique([provider, modelId])
   @@index([modelId, status])
   @@index([provider, status])
 }

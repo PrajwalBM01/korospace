@@ -1,3 +1,10 @@
+/*
+  Warnings:
+
+  - A unique constraint covering the columns `[issuer,accountId]` on the table `account` will be added. If there are existing duplicate values, this will fail.
+  - Added the required column `issuer` to the `account` table without a default value. This is not possible if the table is not empty.
+
+*/
 -- CreateEnum
 CREATE TYPE "ModelProvider" AS ENUM ('OPENROUTER', 'ANTHROPIC', 'GOOGLE', 'OPENAI');
 
@@ -6,9 +13,6 @@ CREATE TYPE "ModelStatus" AS ENUM ('ACTIVE', 'DEPRECATED', 'RETIRED');
 
 -- CreateEnum
 CREATE TYPE "PlanTier" AS ENUM ('FREE', 'PAID');
-
--- CreateEnum
-CREATE TYPE "CredentialSource" AS ENUM ('PLATFORM', 'BYOK');
 
 -- AlterTable
 ALTER TABLE "account" ADD COLUMN     "issuer" TEXT NOT NULL;
@@ -24,31 +28,21 @@ ADD COLUMN     "planTier" "PlanTier" NOT NULL DEFAULT 'FREE',
 ADD COLUMN     "role" TEXT;
 
 -- CreateTable
-CREATE TABLE "Model" (
-    "id" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "authorName" TEXT NOT NULL,
-    "family" TEXT,
-    "description" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Model_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "ModelRoute" (
     "id" TEXT NOT NULL,
+    "modelName" TEXT NOT NULL,
+    "displayName" TEXT NOT NULL,
+    "author" TEXT NOT NULL,
     "modelId" TEXT NOT NULL,
+    "description" TEXT,
     "provider" "ModelProvider" NOT NULL,
-    "providerModelId" TEXT NOT NULL,
     "inputPricePerM" DECIMAL(12,4),
     "outputPricePerM" DECIMAL(12,4),
     "currency" TEXT NOT NULL DEFAULT 'USD',
     "contextWindow" INTEGER,
     "maxOutputTokens" INTEGER,
     "platformEnabled" BOOLEAN NOT NULL DEFAULT false,
-    "byokEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "byokEnabled" BOOLEAN NOT NULL DEFAULT false,
     "status" "ModelStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -71,10 +65,7 @@ CREATE TABLE "UserProviderKey" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Model_slug_key" ON "Model"("slug");
-
--- CreateIndex
-CREATE INDEX "Model_authorName_idx" ON "Model"("authorName");
+CREATE UNIQUE INDEX "ModelRoute_modelName_key" ON "ModelRoute"("modelName");
 
 -- CreateIndex
 CREATE INDEX "ModelRoute_modelId_status_idx" ON "ModelRoute"("modelId", "status");
@@ -83,7 +74,7 @@ CREATE INDEX "ModelRoute_modelId_status_idx" ON "ModelRoute"("modelId", "status"
 CREATE INDEX "ModelRoute_provider_status_idx" ON "ModelRoute"("provider", "status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ModelRoute_provider_providerModelId_key" ON "ModelRoute"("provider", "providerModelId");
+CREATE UNIQUE INDEX "ModelRoute_provider_modelId_key" ON "ModelRoute"("provider", "modelId");
 
 -- CreateIndex
 CREATE INDEX "UserProviderKey_userId_idx" ON "UserProviderKey"("userId");
@@ -98,8 +89,4 @@ CREATE UNIQUE INDEX "UserProviderKey_userId_fingerprint_key" ON "UserProviderKey
 CREATE UNIQUE INDEX "account_issuer_accountId_uidx" ON "account"("issuer", "accountId");
 
 -- AddForeignKey
-ALTER TABLE "ModelRoute" ADD CONSTRAINT "ModelRoute_modelId_fkey" FOREIGN KEY ("modelId") REFERENCES "Model"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "UserProviderKey" ADD CONSTRAINT "UserProviderKey_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

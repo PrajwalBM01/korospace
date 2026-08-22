@@ -3,7 +3,7 @@ import chatnode from "./chatnode"
 import type { Message as DbMessage } from "@/app/generated/prisma/client"
 import textnode from "./textnode"
 import webnode from "./webnode"
-import { z } from "zod"
+import { TypeOf, z } from "zod"
 import { MessageSchema } from "@/app/generated/zod/schemas/models/Message.schema"
 
 enum status {
@@ -13,32 +13,25 @@ enum status {
   idle,
 }
 
-// export type chatNode = Node<
-//   {
-//     title: string
-//     messages: DbMessage[] | []
-//     nodeData: { model: string } | null
-//   },
-//   "chat"
-// >
+const sourceSchema = z.enum(["PLATFORM", "BYOK"])
 
-// export type webNode = Node<
-//   {
-//     title: string
-//     nodeData: {
-//       url: string
-//       status: status
-//       content: string
-//       fetchedAt: Date
-//     } | null
-//   },
-//   "web"
-// >
+export const modelSchema = z.object({
+  source: sourceSchema,
+  author: z.string(),
+  modelId: z.string(),
+})
+
+export type Source = z.infer<typeof sourceSchema>
+export type modelType = z.infer<typeof modelSchema>
 
 //schemas
 export const ChatNodeDataSchema = z.object({
-  title: z.string().default("Untitled"),
-  model: z.string().default("gemini-2.5-flash"),
+  model: modelSchema.default({
+    source: "PLATFORM",
+    author: "openrouter",
+    modelId: "openrouter/free",
+  }),
+
   messages: z.array(MessageSchema).default([]),
 })
 

@@ -28,10 +28,11 @@ export const getNodeChat = (nodeId: string, initial: DbMessages) => {
       id: nodeId,
       messages: toUiMessage(initial),
       transport: new DefaultChatTransport({
-        prepareSendMessagesRequest: ({ messages }) => ({
+        prepareSendMessagesRequest: ({ body, messages }) => ({
           body: {
             nodeId,
             message: messages[messages.length - 1],
+            ...body,
           },
         }),
       }),

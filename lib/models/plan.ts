@@ -3,15 +3,12 @@ import { DirectModel, OpenRouterModel } from "./schemas"
 import { perMillion } from "./price"
 
 export type PlannedModel = {
-  slug: string
-  authorName: string
+  modelName: string
+  displayName: string
+  author: string
+  modelId: string
   description: string | null
-}
-
-export type PlannedRoute = {
-  slug: string // links back to the model above
   provider: ModelProvider
-  providerModelId: string
   inputPricePerM: string | null
   outputPricePerM: string | null
   contextWindow: number | null
@@ -20,9 +17,31 @@ export type PlannedRoute = {
 
 export type Plan = {
   models: PlannedModel[]
-  routes: PlannedRoute[]
-  /** Only these providers may be reconciled later. See the note below. */
   syncedProviders: ModelProvider[]
+}
+
+const getDisplayName = (raw: string | undefined) => {
+  if (raw === undefined) {
+    return null
+  }
+
+  const split = raw.split(":")
+  if (split.length === 1) {
+    return split[0].trim()
+  }
+  return split[1].trim()
+}
+
+const getAuthor = (raw: string | undefined) => {
+  if (raw === undefined) {
+    return null
+  }
+
+  const split = raw.split(":")
+  if (split.length === 1) {
+    return null
+  }
+  return split[0].trim().toLowerCase()
 }
 
 export function buildPlan(input: {
@@ -32,25 +51,21 @@ export function buildPlan(input: {
   google: DirectModel[] | null
 }): Plan {
   const models: PlannedModel[] = []
-  const routes: PlannedRoute[] = []
   const syncedProviders: ModelProvider[] = []
 
   const orById = new Map((input.openrouter ?? []).map((m) => [m.id, m]))
 
   if (input.openrouter) {
     for (const m of input.openrouter) {
-      const slug = `openrouter:${m.id}`
+      const name = `openrouter:${m.id}`
 
       models.push({
-        slug,
-        authorName: m.id.replace(/^~/, "").split("/")[0],
+        modelName: name,
+        modelId: m.id,
+        displayName: getDisplayName(m.name) ?? m.id,
+        author: getAuthor(m.name) ?? m.id.split("/")[0].toLowerCase(),
         description: m.description?.trim() || null,
-      })
-
-      routes.push({
-        slug,
         provider: ModelProvider.OPENROUTER,
-        providerModelId: m.id,
         inputPricePerM: perMillion(m.pricing?.prompt),
         outputPricePerM: perMillion(m.pricing?.completion),
         contextWindow:
@@ -64,31 +79,36 @@ export function buildPlan(input: {
   const direct = [
     {
       provider: ModelProvider.ANTHROPIC,
-      author: "anthropic",
+      author: ModelProvider.ANTHROPIC.toLowerCase(),
       list: input.anthropic,
     },
-    { provider: ModelProvider.OPENAI, author: "openai", list: input.openai },
-    { provider: ModelProvider.GOOGLE, author: "google", list: input.google },
+    {
+      provider: ModelProvider.OPENAI,
+      author: ModelProvider.OPENAI.toLowerCase(),
+      list: input.openai,
+    },
+    {
+      provider: ModelProvider.GOOGLE,
+      author: ModelProvider.GOOGLE.toLowerCase(),
+      list: input.google,
+    },
   ]
 
   for (const source of direct) {
     if (!source.list) continue
 
     for (const m of source.list) {
-      const slug = `${source.author}/${m.id}`
+      const name = `${source.author}:${m.id}`
 
-      const or = orById.get(`${source.author}:${m.id}`)
+      const or = orById.get(`${source.author}/${m.id}`)
 
       models.push({
-        slug,
-        authorName: source.author,
+        modelName: name,
+        modelId: m.id,
+        author: source.provider.toLowerCase(),
+        displayName: m.displayName ?? m.id,
         description: m.description?.trim() || null,
-      })
-
-      routes.push({
-        slug,
         provider: source.provider,
-        providerModelId: m.id,
         inputPricePerM: perMillion(or?.pricing?.prompt),
         outputPricePerM: perMillion(or?.pricing?.completion),
         contextWindow: m.contextWindow ?? or?.context_length ?? null,
@@ -99,5 +119,5 @@ export function buildPlan(input: {
     syncedProviders.push(source.provider)
   }
 
-  return { models, routes, syncedProviders }
+  return { models, syncedProviders }
 }

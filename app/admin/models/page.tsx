@@ -45,17 +45,18 @@ export default async function AdminModelsPage({
   const routes = await prisma.modelRoute.findMany({
     where: {
       ...scope,
-      ...(q && { providerModelId: { contains: q, mode: "insensitive" } }),
+      ...(q && { modelId: { contains: q, mode: "insensitive" } }),
       ...(filter === "free" && { inputPricePerM: 0, outputPricePerM: 0 }),
       ...(filter === "enabled" && {
         OR: [{ platformEnabled: true }, { byokEnabled: true }],
       }),
     },
-    orderBy: [{ provider: "asc" }, { providerModelId: "asc" }],
+    orderBy: [{ provider: "asc" }, { modelId: "asc" }],
     select: {
       id: true,
       provider: true,
-      providerModelId: true,
+      modelId: true,
+      displayName: true,
       inputPricePerM: true,
       outputPricePerM: true,
       contextWindow: true,
@@ -176,7 +177,8 @@ export default async function AdminModelsPage({
                 {group.rows.map((r) => (
                   <tr key={r.id} className="border-t">
                     <td className="px-3 py-2 font-mono text-xs">
-                      {r.providerModelId}
+                    <span className="font-medium">{r.displayName}</span>
+                    <span className="text-muted-foreground ml-2 font-mono text-xs">{r.modelId}</span>
                       {Date.now() - r.createdAt.getTime() < WEEK && (
                         <span className="ml-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-600">
                           NEW
@@ -197,7 +199,7 @@ export default async function AdminModelsPage({
                         routeId={r.id}
                         field="platformEnabled"
                         enabled={r.platformEnabled}
-                        label={`Platform key: ${r.providerModelId}`}
+                        label={`Platform key: ${r.modelId}`}
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -205,7 +207,7 @@ export default async function AdminModelsPage({
                         routeId={r.id}
                         field="byokEnabled"
                         enabled={r.byokEnabled}
-                        label={`BYOK: ${r.providerModelId}`}
+                        label={`BYOK: ${r.modelId}`}
                       />
                     </td>
                   </tr>
