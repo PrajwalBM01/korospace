@@ -20,6 +20,8 @@ import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { Prisma } from "@/app/generated/prisma/client"
 import { modelSchema } from "@/components/reactflow/nodes/index"
+import { consumeRateLimit } from "@/lib/limits/rate-limit"
+import { CHAT_BURST, CHAT_PLATFORM_DAILY } from "@/lib/limits/limits"
 
 export const runtime = "nodejs"
 
@@ -53,7 +55,6 @@ export async function POST(req: NextRequest) {
   const incoming = await req.json().catch(() => null)
   if (!incoming)
     return NextResponse.json({ error: "Malformed JSON" }, { status: 400 })
-  console.log(incoming)
 
   const parsed = ChatRequestSchema.safeParse(incoming)
   if (!parsed.success) {
@@ -61,6 +62,45 @@ export async function POST(req: NextRequest) {
   }
 
   const { nodeId, message, modelDetails } = parsed.data
+
+  const burst = await consumeRateLimit(
+    "chat:burst",
+    session.user.id,
+    CHAT_BURST
+  )
+
+  if (!burst.allowed) {
+    return NextResponse.json(
+      {
+        error: "You're sending messages too quickly. Try again in a moment.",
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(burst.retryAfterSeconds) },
+      }
+    )
+  }
+
+  if (modelDetails.source === "PLATFORM") {
+    const dailyLimit = await consumeRateLimit(
+      "chat:platform:daily",
+      session.user.id,
+      CHAT_PLATFORM_DAILY
+    )
+
+    if (!dailyLimit.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "You've hit today's limit for included models. Add your own API key to keep going.",
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(dailyLimit.retryAfterSeconds) },
+        }
+      )
+    }
+  }
 
   const modelUsablityCheck = await checkModelUsablity(
     modelDetails,
@@ -76,8 +116,6 @@ export async function POST(req: NextRequest) {
   const { apiKey, modelId, provider } = modelUsablityCheck.data
 
   const streamModel = getStreamModel({ provider, modelId, apiKey })
-
-  console.log(streamModel)
 
   const node = await prisma.node.findFirst({
     where: { id: nodeId, canvas: { userId: session.user.id } },
@@ -109,15 +147,25 @@ export async function POST(req: NextRequest) {
     model: streamModel,
     instructions: system,
     messages: await convertToModelMessages(dbMessages),
+    abortSignal: req.signal,
+    onError: ({ error }) => {
+      console.error("llm_error", {
+        nodeId,
+        userId: session.user.id,
+        source: modelDetails.source,
+        provider,
+        modelId,
+        message: error instanceof Error ? error.message : String(error),
+      })
+    },
   })
-
-  console.log(await result.finalStep)
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({
       stream: result.stream,
       originalMessages: dbMessages,
       generateMessageId: () => aiId,
+      onError: () => "The model could not respons, PLease try again",
       onEnd: async (endData) => {
         const text = endData.responseMessage.parts
           .filter((part) => part.type === "text")
@@ -125,7 +173,12 @@ export async function POST(req: NextRequest) {
           .join("")
           .trim()
 
-        if (!text) return
+        if (!text) {
+          await prisma.message.deleteMany({
+            where: { id: message.id, nodeId },
+          })
+          return
+        }
 
         await saveAssistantMessage(nodeId, {
           messageId: aiId,

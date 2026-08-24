@@ -1,0 +1,51 @@
+name: ci
+
+on: push
+
+# A new push to the same branch cancels the in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # postinstall already runs `prisma generate`, but npm can skip
+      # lifecycle scripts, so this makes the dependency explicit.
+      - run: npm ci
+
+      - name: Generate Prisma + Zod clients
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Not a gate yet - 42 pre-existing errors (mostly lowercase
+      # component names). Remove continue-on-error once those are cleared.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      # Enable once lib/env.ts lands and these are set as repo secrets.
+      # - name: Build
+      #   run: npm run build
+      #   env:
+      #     DATABASE_URL:         ${{ secrets.DATABASE_URL }}
+      #     DIRECT_URL:           ${{ secrets.DIRECT_URL }}
+      #     ENCRYPTION_KEY:       ${{ secrets.ENCRYPTION_KEY }}
+      #     OPENROUTER_API_KEY:   ${{ secrets.OPENROUTER_API_KEY }}
+      #     BETTER_AUTH_SECRET:   ${{ secrets.BETTER_AUTH_SECRET }}
+      #     BETTER_AUTH_URL:      http://localhost:3000
+      #     GOOGLE_CLIENT_ID:     ${{ secrets.GOOGLE_CLIENT_ID }}
+      #     GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      #     CRON_SECRET:          ${{ secrets.CRON_SECRET }}

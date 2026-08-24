@@ -31,7 +31,6 @@ export async function setApiKey(data: AddApiKeyType): Promise<ActionResult> {
   }
 
   const ecryptedData = encryptKey(plainkey, userId, provider)
-  console.log(ecryptedData)
 
   try {
     await prisma.user.update({

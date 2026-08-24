@@ -26,12 +26,11 @@ const ChatSidebar = ({ nodeId }: { nodeId: string }) => {
     [nodeId]
   )
   const { messages } = useChat({ chat })
-  const title = node?.data.title ?? "Chat"
 
   return (
     <SheetContent className="overflow-y-scroll bg-accent data-[side=right]:sm:max-w-lg">
       <SheetHeader>
-        <SheetTitle>{title}</SheetTitle>
+        <SheetTitle>CHAT</SheetTitle>
         <SheetDescription className="hidden">
           Chat history in side view
         </SheetDescription>

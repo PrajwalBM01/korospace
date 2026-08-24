@@ -74,7 +74,6 @@ export async function keyCheckHttp<T>(
 
       //code faults, expected errors
       if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-        console.log("failed")
         return { ok: false, error: "Could not verifiy your api key" }
       }
 

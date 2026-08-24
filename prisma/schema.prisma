@@ -48,7 +48,6 @@ enum PlanTier {
   PAID
 }
 
-
 model Canvas {
   id        String   @id @default(cuid())
   title     String?
@@ -117,9 +116,9 @@ model User {
   accounts      Account[]
   canvases      Canvas[]
 
-//apikeys
+  //apikeys
   providerKeys UserProviderKey[]
-  planTier PlanTier @default(FREE)
+  planTier     PlanTier          @default(FREE)
 
   role       String?
   banned     Boolean?  @default(false)
@@ -183,33 +182,32 @@ model Verification {
   @@map("verification")
 }
 
-
 model ModelRoute {
   id String @id @default(cuid())
 
   //model detials
-  modelName String @unique
+  modelName   String        @unique
   displayName String
-  author String
-  modelId String
+  author      String
+  modelId     String
   description String?
-  provider ModelProvider
+  provider    ModelProvider
 
   //pricing
-  inputPricePerM       Decimal? @db.Decimal(12, 4)
-  outputPricePerM      Decimal? @db.Decimal(12, 4)
-  currency String @default("USD")
+  inputPricePerM  Decimal? @db.Decimal(12, 4)
+  outputPricePerM Decimal? @db.Decimal(12, 4)
+  currency        String   @default("USD")
 
   //capablities
-  contextWindow Int?
+  contextWindow   Int?
   maxOutputTokens Int?
 
   //access-policy
-  platformEnabled Boolean @default(false)
-  byokEnabled Boolean @default(false)
-  status ModelStatus @default(ACTIVE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  platformEnabled Boolean     @default(false)
+  byokEnabled     Boolean     @default(false)
+  status          ModelStatus @default(ACTIVE)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@unique([provider, modelId])
   @@index([modelId, status])
@@ -217,14 +215,14 @@ model ModelRoute {
 }
 
 model UserProviderKey {
-  id String @id @default(uuid())
-  userId String
-  user User @relation(fields: [userId], references: [id],onDelete: Cascade)
+  id       String        @id @default(uuid())
+  userId   String
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider ModelProvider
 
-  ciphertext String
-  iv String
-  authTag String
+  ciphertext  String
+  iv          String
+  authTag     String
   fingerprint String
 
   isValid Boolean @default(true)
@@ -232,4 +230,23 @@ model UserProviderKey {
   @@unique([userId, provider])
   @@unique([userId, fingerprint])
   @@index([userId])
+}
+
+model RateLimit {
+  id          String @id
+  key         String
+  count       Int
+  lastRequest BigInt
+
+  @@unique([key])
+  @@map("rateLimit")
+}
+
+model ApiRateLimit {
+  id        String   @id
+  key       String   @unique
+  count     Int      @default(0)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }

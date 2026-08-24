@@ -35,6 +35,25 @@ export const auth = betterAuth({
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
 
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-real-ip"],
+    },
+  },
+
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    storage: "database",
+    modelName: "rateLimit",
+    customRules: {
+      "/sign-in/email": { window: 50, max: 5 },
+      "/sign-up/email": { window: 3600, max: 3 },
+      "/forget-password": { window: 3600, max: 3 },
+    },
+  },
+
   databaseHooks: {
     user: {
       create: {
@@ -47,8 +66,5 @@ export const auth = betterAuth({
     },
   },
 
-  plugins: [
-    admin(),
-    nextCookies(),
-  ],
+  plugins: [admin(), nextCookies()],
 })

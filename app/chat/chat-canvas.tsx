@@ -326,7 +326,6 @@ const page = ({
 
   return (
     <ReactFlow
-      debug={true}
       onNodeContextMenu={(e) => {
         e.preventDefault()
       }}
