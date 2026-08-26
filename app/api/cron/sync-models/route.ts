@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import crypto from "node:crypto"
 import { syncModels } from "@/lib/models/sync"
-
+import { env } from "@/lib/env"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 function secretMatches(header: string | null): boolean {
-  const secret = process.env.CRON_SECRET
+  const secret = env.CRON_SECRET
   if (!secret || !header) return false
 
   const given = Buffer.from(header)

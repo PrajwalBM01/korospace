@@ -50,3 +50,22 @@ export async function consumeRateLimit(
     return { allowed: true, retryAfterSeconds: 0 }
   }
 }
+
+export async function refundRateLimit(
+  name: string,
+  subject: string,
+  { windowSeconds }: RateLimitRule
+): Promise<void> {
+  const windowMs = windowSeconds * 1000
+  const key = `${name}:${subject}:${Math.floor(Date.now() / windowMs)}`
+
+  try {
+    await prisma.$executeRaw`
+      UPDATE "ApiRateLimit"
+      SET "count" = GREATEST("count" - 1, 0)
+      WHERE "key" = ${key}
+    `
+  } catch (error) {
+    console.error("ratelimit_refund_failed", { key, error })
+  }
+}

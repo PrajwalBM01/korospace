@@ -1,13 +1,10 @@
-export const runtime = "nodejs"
 import crypto from "node:crypto"
 import { AddApiKeyType } from "@/types/keySchema"
 import { ActionResult } from "@/types/nodeSchema"
 import { UserProviderKey } from "@/app/generated/prisma/client"
+import { env } from "@/lib/env"
 
-const MASTER = Buffer.from(process.env.ENCRYPTION_KEY!, "base64")
-if (MASTER.length !== 32)
-  throw new Error("ENCRYPTION_KEY must be 32 bytes, base64")
-
+const MASTER = Buffer.from(env.ENCRYPTION_KEY, "base64")
 const K_ENC = Buffer.from(
   crypto.hkdfSync(
     "sha256",

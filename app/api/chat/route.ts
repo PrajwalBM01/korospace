@@ -20,8 +20,13 @@ import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { Prisma } from "@/app/generated/prisma/client"
 import { modelSchema } from "@/components/reactflow/nodes/index"
-import { consumeRateLimit } from "@/lib/limits/rate-limit"
-import { CHAT_BURST, CHAT_PLATFORM_DAILY } from "@/lib/limits/limits"
+import { consumeRateLimit, refundRateLimit } from "@/lib/limits/rate-limit"
+import {
+  CHAT_BURST,
+  CHAT_PLATFORM_USER_DAILY,
+  CHAT_PLATFORM_GLOBAL_DAILY,
+} from "@/lib/limits/limits"
+
 
 export const runtime = "nodejs"
 
@@ -42,9 +47,6 @@ const ChatRequestSchema = z.object({
   modelDetails: modelSchema,
 })
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
-})
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers })
@@ -81,27 +83,52 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  if (modelDetails.source === "PLATFORM") {
-    const dailyLimit = await consumeRateLimit(
-      "chat:platform:daily",
+  const isAdmin = session.user.role === "admin"
+
+  if (modelDetails.source === "PLATFORM" && !isAdmin) {
+    const userDaily = await consumeRateLimit(
+      "chat:platform:user:daily",
       session.user.id,
-      CHAT_PLATFORM_DAILY
+      CHAT_PLATFORM_USER_DAILY
     )
 
-    if (!dailyLimit.allowed) {
+    if (!userDaily.allowed) {
       return NextResponse.json(
         {
-          error:
-            "You've hit today's limit for included models. Add your own API key to keep going.",
+          error: `You've used your ${CHAT_PLATFORM_USER_DAILY.limit} included messages for today. Add your own API key to keep going.`,
         },
         {
           status: 429,
-          headers: { "Retry-After": String(dailyLimit.retryAfterSeconds) },
+          headers: { "Retry-After": String(userDaily.retryAfterSeconds) },
+        }
+      )
+    }
+
+    const globalDaily = await consumeRateLimit(
+      "chat:platform:global:daily",
+      "all",
+      CHAT_PLATFORM_GLOBAL_DAILY
+    )
+
+    if (!globalDaily.allowed) {
+      await refundRateLimit(
+        "chat:platform:user:daily",
+        session.user.id,
+        CHAT_PLATFORM_USER_DAILY
+      )
+
+      return NextResponse.json(
+        {
+          error:
+            "Daily capacity for included models is used up. Try again tomorrow, or add your own API key to keep going.",
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(globalDaily.retryAfterSeconds) },
         }
       )
     }
   }
-
   const modelUsablityCheck = await checkModelUsablity(
     modelDetails,
     session.user.id

@@ -11,6 +11,7 @@ import { createGoogle, GoogleProviderSettings } from "@ai-sdk/google"
 import { Provider, UIMessage } from "ai"
 import { NextResponse } from "next/server"
 import { decryptKey } from "@/actions/actionHeper"
+import { env } from "@/lib/env"
 
 export type ModelUsablityResult<T> =
   { ok: true; data: T } | { ok: false; error: { msg: string; status: number } }
@@ -219,7 +220,7 @@ export async function checkModelUsablity(
         error: { msg: "Get pro to access this model", status: 400 },
       }
     }
-    apiKey = String(process.env.OPENROUTER_API_KEY)
+    apiKey = String(env.OPENROUTER_API_KEY)
   }
 
   const author = modelDetails.author.toUpperCase() as ModelProvider
