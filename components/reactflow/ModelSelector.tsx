@@ -62,17 +62,9 @@ const getModelDetails = ({
   model: modelType
   byokModels: DisplayModel[]
   platformModels: DisplayModel[]
-}) => {
+}): DisplayModel | null => {
   const sourceList = model.source === "PLATFORM" ? platformModels : byokModels
-  const found = sourceList.find((m) => m.modelId === model.modelId)
-
-  if (!found) {
-    throw new Error(
-      `Model with ID ${model.modelId} not found in ${model.source}`
-    )
-  }
-
-  return found
+  return sourceList.find((m) => m.modelId === model.modelId) ?? null
 }
 
 /** Why a row cannot be picked, or null when it can. */
@@ -96,9 +88,9 @@ const ModelSelector = ({
   const [selected, setSelected] = useState<{
     model: DisplayModel
     source: Source
-  } | null>({
-    model: getModelDetails({ model, byokModels, platformModels }),
-    source: model.source,
+  } | null>(() => {
+    const found = getModelDetails({ model, byokModels, platformModels })
+    return found ? { model: found, source: model.source } : null
   })
 
   const list = tabs === "PLATFORM" ? platformModels : byokModels

@@ -2,10 +2,14 @@
 
 import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { AddApiKey, AddApiKeyType, RemoveApiKeyType } from "@/types/keySchema"
+import {
+  AddApiKey,
+  AddApiKeyType,
+  RemoveApiKey,
+  RemoveApiKeyType,
+} from "@/types/keySchema"
 import { ActionResult } from "@/types/nodeSchema"
 import { headers } from "next/headers"
-import crypto from "node:crypto"
 import { checkApiStatus, encryptKey } from "./actionHeper"
 
 export async function setApiKey(data: AddApiKeyType): Promise<ActionResult> {
@@ -61,6 +65,28 @@ export async function setApiKey(data: AddApiKeyType): Promise<ActionResult> {
   }
 }
 
-export async function removeApiKey(data: RemoveApiKeyType) {
-  console.log(data)
+export async function removeApiKey(
+  data: RemoveApiKeyType
+): Promise<ActionResult> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) return { ok: false, error: "Please sign in again." }
+
+  const validFields = RemoveApiKey.safeParse(data)
+  if (!validFields.success) return { ok: false, error: "Invalid provider." }
+
+  try {
+    // deleteMany, not delete: a key that is already gone is not an error,
+    // and the userId in the filter is what makes this safe to call with a
+    // client-supplied provider.
+    await prisma.userProviderKey.deleteMany({
+      where: {
+        userId: session.user.id,
+        provider: validFields.data.provider,
+      },
+    })
+    return { ok: true, msg: "Key removed" }
+  } catch (e) {
+    console.error("removeApiKey failed", e)
+    return { ok: false, error: "Could not remove the key" }
+  }
 }

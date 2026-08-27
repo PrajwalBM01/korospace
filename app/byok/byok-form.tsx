@@ -77,30 +77,36 @@ const ByokForm = ({ savedProviders }: { savedProviders: ProviderKey[] }) => {
     if (!key || pending) return
 
     setPending(provider)
-    try {
-      await setApiKey({ provider, key })
-      setSaved((prev) => ({ ...prev, [provider]: maskOf(key) }))
-      setDrafts((prev) => ({ ...prev, [provider]: "" }))
-      setRevealed((prev) => ({ ...prev, [provider]: false }))
-    } catch {
-      toast.error(`Could not add the ${NAMES[provider]} key`)
-    } finally {
-      setPending(null)
+    const res = await setApiKey({ provider, key })
+    setPending(null)
+
+    if (!res.ok) {
+      // The action verifies the key against the provider before storing it,
+      // so res.error is usually specific - surface it rather than a generic.
+      toast.error(res.error)
+      return
     }
+
+    setSaved((prev) => ({ ...prev, [provider]: maskOf(key) }))
+    setDrafts((prev) => ({ ...prev, [provider]: "" }))
+    setRevealed((prev) => ({ ...prev, [provider]: false }))
+    toast.success(`${NAMES[provider]} key added`)
   }
 
   const remove = async (provider: ProviderKey) => {
     if (pending) return
 
     setPending(provider)
-    try {
-      await removeApiKey({ provider })
-      setSaved((prev) => ({ ...prev, [provider]: null }))
-    } catch {
-      toast.error(`Could not remove the ${NAMES[provider]} key`)
-    } finally {
-      setPending(null)
+    const res = await removeApiKey({ provider })
+    setPending(null)
+
+    if (!res.ok) {
+      toast.error(res.error)
+      return
     }
+
+    setSaved((prev) => ({ ...prev, [provider]: null }))
+    toast.success(`${NAMES[provider]} key removed`)
   }
 
   const connected = PROVIDERS.filter((p) => saved[p.key]).length
