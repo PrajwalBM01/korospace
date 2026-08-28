@@ -375,6 +375,8 @@ const page = ({
       <RightTrigger />
       <RightSidebar />
 
+      <div className="absolute p-1 font-quantico"> Korospace</div>
+
       <PaneContext />
       <MiniMap pannable zoomable />
       <Controls showInteractive={false} />
