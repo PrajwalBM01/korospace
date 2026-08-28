@@ -76,6 +76,8 @@
 
 @theme inline {
   --font-sans: var(--font-sans);
+  --font-quantico: var(--font-quantico);
+  --font-khand: var(--font-khand);
   --font-heading: var(--font-heading);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -131,6 +133,12 @@
   html {
     @apply font-sans;
   }
+  /* so the navbar's anchor links glide rather than jump */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
 }
 
 .dots {
@@ -182,4 +190,82 @@
   border-radius: 6px;
   border: none;
   overflow: hidden;
+}
+
+/* Context travelling along a wire. Driven by CSS so it needs no JS and honours
+   reduced-motion for free; `pathLength="1"` makes the dash units fractions of
+   each path, so paths of different lengths animate identically. */
+@keyframes wire-flow {
+  to {
+    stroke-dashoffset: -1;
+  }
+}
+
+.wire-flow {
+  stroke-dasharray: 0.08 0.92;
+  animation: wire-flow 2.6s linear infinite;
+}
+
+@keyframes wire-ants {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.wire-ants {
+  stroke-dasharray: 3 3;
+  animation: wire-ants 1.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wire-flow,
+  .wire-ants {
+    animation: none;
+  }
+}
+
+/* Footer wordmark: columns of light rising off the bottom of the page. The
+   slab takes the page background so it never seams against the section above
+   it, and the letters are knocked out in that same colour. */
+.wordmark-slab {
+  background-color: var(--background);
+}
+
+/* The gradient is anchored to the container, not to each column, so every
+   column stays saturated at its base and only its top edge differs.
+
+   The two themes run in opposite directions: on dark the columns emit light,
+   on light they are ink rising into white. The value has to invert, because a
+   pale glow on white leaves the knocked-out letters at ~1.2:1 - unreadable.
+   Both variants hold their saturation past the top of the letters (~40% of
+   the slab) and only fade above them. */
+.wordmark-glow {
+  background-image: linear-gradient(
+    to top,
+    oklch(0.48 0.18 131) 0%,
+    oklch(0.53 0.2 131) 26%,
+    oklch(0.58 0.21 131) 44%,
+    oklch(0.72 0.2 131 / 0.5) 60%,
+    oklch(0.82 0.16 131 / 0.2) 75%,
+    transparent 90%
+  );
+}
+
+.dark .wordmark-glow {
+  background-image: linear-gradient(
+    to top,
+    oklch(0.97 0.08 131) 0%,
+    oklch(0.86 0.23 131) 18%,
+    oklch(0.75 0.22 131 / 0.62) 42%,
+    oklch(0.7 0.2 131 / 0.22) 62%,
+    transparent 88%
+  );
+}
+
+/* Fractal noise, faded out where the light is. Gives the gradient the grainy
+   dissolve instead of a clean band. */
+.wordmark-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 78%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 78%);
 }

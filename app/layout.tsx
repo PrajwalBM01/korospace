@@ -1,4 +1,11 @@
-import { Geist, Geist_Mono, Inter, Noto_Sans } from "next/font/google"
+import {
+  Geist,
+  Geist_Mono,
+  Inter,
+  Noto_Sans,
+  Quantico,
+  Khand,
+} from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
 
 import "./globals.css"
@@ -17,6 +24,17 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+const quantico = Quantico({
+  subsets: ["latin"],
+  variable: "--font-quantico",
+  weight: ["400", "700"],
+})
+
+const khand = Khand({
+  subsets: ["latin"],
+  variable: "--font-khand",
+  weight: ["400", "700"],
+})
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,7 +49,9 @@ export default function RootLayout({
         fontMono.variable,
         "font-sans",
         inter.variable,
-        notoSansHeading.variable
+        notoSansHeading.variable,
+        quantico.variable,
+        khand.variable
       )}
     >
       <body>
