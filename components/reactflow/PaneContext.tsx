@@ -28,6 +28,7 @@ import {
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { LOADED_PROPS, LOADING_PROPS } from "@/types/nodeSchema"
+import { useCanvasStore } from "@/store/canvasStore"
 
 const themeIcons = {
   light: <Sun />,
@@ -41,6 +42,7 @@ const PaneContext = () => {
     useReactFlow()
   const flowPositions = useRef({ x: 0, y: 0 })
   const { theme, setTheme, themes } = useTheme()
+  const { setFeedbackOpen } = useCanvasStore()
 
   useEffect(() => {
     const getPosition = (e: MouseEvent) => {
@@ -131,7 +133,13 @@ const PaneContext = () => {
         </div>
       </ContextMenuGroup>
       <ContextMenuSeparator />
-      <ContextMenuItem>
+      <ContextMenuItem
+        onSelect={() => {
+          // Let the menu finish unmounting first - opening a dialog in the
+          // same tick can leave the body stuck with pointer-events: none.
+          setTimeout(() => setFeedbackOpen(true), 0)
+        }}
+      >
         <Bug /> Report/Bug
       </ContextMenuItem>
     </ContextMenuContent>

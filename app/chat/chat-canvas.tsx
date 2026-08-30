@@ -40,6 +40,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import RightSidebar from "@/components/RightSidebar"
+import FeedbackDialog from "@/components/FeedbackDialog"
 import { LeftTrigger, RightTrigger } from "@/components/sidebarTriggers"
 import LeftSidebar from "@/components/LeftSidebar"
 import { Sheet } from "@/components/ui/sheet"
@@ -378,6 +379,7 @@ const page = ({
       <div className="absolute p-1 font-quantico"> Korospace</div>
 
       <PaneContext />
+      <FeedbackDialog />
       <MiniMap pannable zoomable />
       <Controls showInteractive={false} />
 

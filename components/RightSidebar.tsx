@@ -4,7 +4,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
+  Bug,
   ChevronRight,
+  Inbox,
   KeyRound,
   LogOut,
   Monitor,
@@ -61,7 +63,9 @@ function Segmented<T extends string>({
       role="radiogroup"
       aria-label={label}
       className="grid gap-1 rounded-lg border bg-card p-1"
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      style={{
+        gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
+      }}
     >
       {options.map((option) => {
         const active = option.value === value
@@ -118,8 +122,38 @@ const NavRow = ({
   </Link>
 )
 
+/** Same row, but it runs something instead of navigating. */
+const ActionRow = ({
+  onClick,
+  icon,
+  title,
+  hint,
+}: {
+  onClick: () => void
+  icon: React.ReactNode
+  title: string
+  hint: string
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex w-full items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
+  >
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-muted text-muted-foreground [&_svg]:size-3.5">
+      {icon}
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-xs font-medium">{title}</span>
+      <span className="block truncate text-[10px] text-muted-foreground">
+        {hint}
+      </span>
+    </span>
+    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
+  </button>
+)
+
 const RightSidebar = () => {
-  const { isMouse, setIsMouse } = useCanvasStore()
+  const { isMouse, setIsMouse, setFeedbackOpen } = useCanvasStore()
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
@@ -210,6 +244,25 @@ const RightSidebar = () => {
               hint="Enable models for the platform and BYOK"
             />
           )}
+          {isAdmin && (
+            <NavRow
+              href="/admin/bugs"
+              icon={<Inbox strokeWidth={1.5} />}
+              title="Feedback inbox"
+              hint="What people have reported during the beta"
+            />
+          )}
+        </div>
+
+        {/* beta feedback */}
+        <div className="flex flex-col gap-1.5">
+          <SectionLabel>Beta</SectionLabel>
+          <ActionRow
+            onClick={() => setFeedbackOpen(true)}
+            icon={<Bug strokeWidth={1.5} />}
+            title="Report a bug"
+            hint="Or tell us about a feature you want"
+          />
         </div>
 
         {/* canvas controls */}
@@ -247,8 +300,16 @@ const RightSidebar = () => {
             value={(theme ?? "system") as "light" | "dark" | "system"}
             onChange={setTheme}
             options={[
-              { value: "light", label: "Light", icon: <Sun strokeWidth={1.5} /> },
-              { value: "dark", label: "Dark", icon: <Moon strokeWidth={1.5} /> },
+              {
+                value: "light",
+                label: "Light",
+                icon: <Sun strokeWidth={1.5} />,
+              },
+              {
+                value: "dark",
+                label: "Dark",
+                icon: <Moon strokeWidth={1.5} />,
+              },
               {
                 value: "system",
                 label: "Auto",

@@ -115,6 +115,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   canvases      Canvas[]
+  feedbacks     Feedback[]
 
   //apikeys
   providerKeys UserProviderKey[]
@@ -249,4 +250,15 @@ model ApiRateLimit {
   expiresAt DateTime
 
   @@index([expiresAt])
+}
+
+model Feedback {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }
