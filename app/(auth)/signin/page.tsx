@@ -8,6 +8,7 @@ import { AlertCircle, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
+import AuthShell from "@/components/auth/AuthShell"
 import { GoogleButton } from "../google-button"
 
 const SignInPage = () => {
@@ -36,9 +37,9 @@ const SignInPage = () => {
   }
 
   return (
-    <div className="w-full rounded-xl border bg-card p-6 shadow-sm">
+    <AuthShell showcase="left">
       <div className="mb-5 space-y-1">
-        <h1 className="font-heading text-base font-semibold tracking-tight">
+        <h1 className="font-heading text-lg font-semibold tracking-tight">
           Welcome back
         </h1>
         <p className="text-xs text-muted-foreground">
@@ -116,11 +117,7 @@ const SignInPage = () => {
           </p>
         )}
 
-        <Button
-          type="submit"
-          disabled={loading}
-          className="h-9 w-full text-sm"
-        >
+        <Button type="submit" disabled={loading} className="h-9 w-full text-sm">
           {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
@@ -134,7 +131,7 @@ const SignInPage = () => {
           Create an account
         </Link>
       </p>
-    </div>
+    </AuthShell>
   )
 }
 

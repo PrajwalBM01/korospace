@@ -18,6 +18,7 @@ const links = [
   { label: "Why", href: "#why" },
   { label: "Features", href: "#features" },
   { label: "FAQ", href: "#faq" },
+  { label: "Guide", href: "/guide" },
 ]
 
 /* Both of these are external state, not React state, so they are read through

@@ -10,6 +10,7 @@ const groups: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: "Get started", href: "/signup" },
       { label: "Sign in", href: "/signin" },
+      { label: "How to use", href: "/guide" },
     ],
   },
   {
@@ -95,7 +96,10 @@ const Wordmark = () => (
 
       <div className="wordmark-grain pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay" />
 
-<div className="absolute inset-x-0 bottom-0 flex justify-center items-center pb-4"> <span className="text-5xl font-bold font-quantico">Korospace</span></div>
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-center pb-4">
+        {" "}
+        <span className="font-quantico text-5xl font-bold">Korospace</span>
+      </div>
       {/* knocked out of the light, in the slab's own colour */}
       {/* <div className="absolute inset-x-0 bottom-[0.085em] grid grid-cols-9 font-quantico text-[clamp(2rem,13.9vw,18rem)] leading-[0.8] font-bold text-background">
         {"KOROSPACE".split("").map((letter, i) => (
@@ -142,7 +146,7 @@ const Footer = () => {
 
         <div className="flex flex-col gap-2 border-t border-border py-5 font-mono text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>&copy; 2026 korospace</span>
-         
+
           <span>
             Built by{" "}
             <a
