@@ -33,7 +33,7 @@ const chatnode = (props: NodeProps<chatNode>) => {
     () => getNodeChat(props.id, props.data.messages),
     [props.id]
   )
-  const { messages, sendMessage, status } = useChat({ chat })
+  const { messages, sendMessage, status, error } = useChat({ chat })
   const [model, setmodel] = useState<modelType>({
     source: props.data.model.source,
     author: props.data.model.author,
@@ -196,7 +196,10 @@ const chatnode = (props: NodeProps<chatNode>) => {
               />
             )}
             {status === "error" && (
-              <p className="text-xs text-destructive">Something went wrong</p>
+              <div className="flex flex-col">
+                <p className="text-xs text-destructive">Something went wrong</p>
+                <p> {error?.message}</p>
+              </div>
             )}
           </div>
           <form

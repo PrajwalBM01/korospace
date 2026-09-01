@@ -49,12 +49,13 @@ const FaqLink = ({ children }: { children: React.ReactNode }) => (
 const sections: GuideSection[] = [
   {
     id: "getting-in",
-    videoUrl: "",
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/getting%20started.mp4",
     icon: BookOpen,
     title: "Getting in",
     summary: "Make an account and land on your canvas.",
     steps: [
-      "Open the sign-up page and enter your name, email and a password — or press “Continue with Google”.",
+      "Open the sign-up page and enter your name, email and a password, or press “Continue with Google”.",
       "You go straight to a canvas. korospace makes one for you, so there is nothing to set up first.",
       "That canvas is where everything happens: you add nodes to it and wire them together.",
     ],
@@ -62,6 +63,8 @@ const sections: GuideSection[] = [
   {
     id: "moving-around",
     icon: Move,
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/moving%20around.mp4",
     title: "Moving around",
     summary: "Pan, zoom, and find your way around a canvas that has grown.",
     steps: [
@@ -76,12 +79,14 @@ const sections: GuideSection[] = [
     id: "adding-nodes",
     icon: MousePointerClick,
     title: "Adding and removing nodes",
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/node%20actions.mp4",
     summary:
       "Two ways to put a node on the canvas, and one way to take it off.",
     steps: [
       "Right-click any empty part of the canvas to open the create menu, then choose Chat or Text.",
-      "Or drag a wire out from a node’s side handle and let go over empty space — you get a new chat node, already connected to the one you dragged from.",
-      "To remove a node, click the trash icon in its header.",
+      "Or drag a wire out from a node’s side handle and let go over empty space, you get a new chat node, already connected to the one you dragged from.",
+      "To remove a node, click the trash icon in its header. Or click on the node and press backspace (←)",
     ],
     note: (
       <>
@@ -94,6 +99,8 @@ const sections: GuideSection[] = [
   {
     id: "node-types",
     icon: Boxes,
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/node%20types.mp4",
     title: "Chat nodes and text nodes",
     summary: "What each kind of node is for.",
     steps: [
@@ -112,6 +119,8 @@ const sections: GuideSection[] = [
   {
     id: "models",
     icon: Cpu,
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/model%20selection.mp4",
     title: "Choosing a model",
     summary: "Set which model answers, one node at a time.",
     steps: [
@@ -130,6 +139,8 @@ const sections: GuideSection[] = [
   {
     id: "branching",
     icon: GitBranch,
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/branching.mp4",
     title: "Branching a reply",
     summary: "Follow a tangent without losing the thread you were on.",
     steps: [
@@ -151,6 +162,8 @@ const sections: GuideSection[] = [
   {
     id: "wiring",
     icon: Link2,
+    videoUrl:
+      "https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/wiring.mp4",
     title: "Wiring nodes together",
     summary: "Hand one node’s contents to another.",
     steps: [
@@ -187,7 +200,7 @@ const sections: GuideSection[] = [
 ]
 
 const SectionVideo = ({ url, title }: { url: string; title: string }) => (
-  <div className="mb-7 overflow-hidden rounded-xl border border-border bg-muted">
+  <div className="mb-7 overflow-hidden rounded-md border border-border bg-muted">
     <iframe
       src={url}
       title={title}
@@ -270,7 +283,7 @@ export default function GuidePage() {
             </h1>
             <p className="mt-3 text-base leading-relaxed text-muted-foreground">
               Eight short things to learn, in the order you will need them. Each
-              one is just the clicks — the <FaqLink>FAQ</FaqLink> covers why any
+              one is just the clicks, the <FaqLink>FAQ</FaqLink> covers why any
               of it works the way it does.
             </p>
 
@@ -283,7 +296,7 @@ export default function GuidePage() {
                 <span className="font-medium text-foreground">
                   You will need a desktop to follow along.
                 </span>{" "}
-                The canvas is built around a mouse — right-click to add nodes,
+                The canvas is built around a mouse right-click to add nodes,
                 drag to connect them, select text to branch. This page reads
                 fine on a phone, but the app itself does not work on one yet.
               </p>

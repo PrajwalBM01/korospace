@@ -66,7 +66,7 @@ const SignUpPage = () => {
           <Input
             id="name"
             autoComplete="name"
-            placeholder="Ada Lovelace"
+            placeholder="Tyler Durden"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required

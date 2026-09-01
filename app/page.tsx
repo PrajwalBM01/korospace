@@ -107,24 +107,13 @@ export default function Page() {
               <div className="pointer-events-auto flex w-full flex-col items-center justify-center lg:flex-1">
                 <div className="group relative w-full max-w-2xl overflow-hidden rounded bg-black">
                   <video
-                    src="/demo.mp4"
+                    src="https://dfvwlznpwuhtzzlanurx.supabase.co/storage/v1/object/public/korospace-prod/Video%20Project%208.mp4"
                     autoPlay
                     loop
                     muted
                     playsInline
                     className="pointer-events-none block aspect-video w-full object-cover"
                   />
-
-                  <div className="absolute bottom-0 flex h-20 w-full items-end justify-center bg-linear-to-t from-black to-transparent pb-4 sm:h-24">
-                    <a
-                      href="https://x.com/xshadowdev/status/2083527402714726592?s=20"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 font-mono text-sm text-white underline sm:text-base"
-                    >
-                      Know More <ArrowRight className="size-4 sm:size-5" />
-                    </a>
-                  </div>
                 </div>
 
                 <div className="mt-4 grid w-full max-w-2xl grid-cols-2 gap-x-4 gap-y-3 font-mono text-xs sm:text-sm lg:flex lg:w-auto lg:divide-x-2 lg:divide-[#7ccf00]">
