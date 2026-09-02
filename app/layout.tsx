@@ -7,6 +7,7 @@ import {
   Khand,
 } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
+import { Analytics } from "@vercel/analytics/next"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -123,6 +124,7 @@ export default function RootLayout({
       )}
     >
       <body>
+        <Analytics />
         <ThemeProvider>{children}</ThemeProvider>
         <Toaster position="top-right" />
       </body>
