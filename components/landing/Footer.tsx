@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import GetStarted from "./GetStarted"
+import { githubUrl } from "@/lib/site"
 
 type FooterLink = { label: string; href: string; external?: boolean }
 
@@ -22,7 +23,15 @@ const groups: { title: string; links: FooterLink[] }[] = [
   },
   {
     title: "elsewhere",
-    links: [{ label: "X", href: "https://x.com/xshadowdev", external: true }],
+    links: [
+      { label: "X", href: "https://x.com/xshadowdev", external: true },
+      { label: "Github", href: githubUrl, external: true },
+      {
+        label: "Linkedin",
+        href: "https://www.linkedin.com/in/prajwalbm/",
+        external: true,
+      },
+    ],
   },
 ]
 

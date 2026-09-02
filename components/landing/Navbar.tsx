@@ -13,6 +13,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import { githubUrl } from "@/lib/site"
+import { GitHub } from "../ui/github"
 
 const links = [
   { label: "Why", href: "#why" },
@@ -96,7 +98,9 @@ const Navbar = () => {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-
+          <Link href={githubUrl} target="_blank">
+            <GitHub />
+          </Link>
           <Button
             asChild
             variant="ghost"
@@ -104,13 +108,6 @@ const Navbar = () => {
             className="hidden h-9 px-3 font-mono text-sm md:inline-flex"
           >
             <Link href="/signin">Sign in</Link>
-          </Button>
-          <Button
-            asChild
-            size="lg"
-            className="hidden h-9 px-3 font-mono text-sm md:inline-flex"
-          >
-            <Link href="/signup">Get started</Link>
           </Button>
 
           <Sheet open={open} onOpenChange={setOpen}>

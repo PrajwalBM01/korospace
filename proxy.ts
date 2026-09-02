@@ -4,6 +4,12 @@ import { getSessionCookie } from "better-auth/cookies"
 
 export function proxy(request: NextRequest) {
   const sessionCookie = getSessionCookie(request)
+  if (request.nextUrl.pathname === "/") {
+    return sessionCookie
+      ? NextResponse.redirect(new URL("/chat", request.url))
+      : NextResponse.next()
+  }
+
   if (!sessionCookie) {
     return NextResponse.redirect(new URL("/signin", request.url))
   }
@@ -11,5 +17,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/chat/:path*",
+  matcher: ["/", "/api/chat/:path*"],
 }

@@ -26,7 +26,6 @@ const ChatSidebar = ({ nodeId }: { nodeId: string }) => {
     [nodeId]
   )
   const { messages } = useChat({ chat })
-
   return (
     <SheetContent className="overflow-y-scroll bg-accent data-[side=right]:sm:max-w-lg">
       <SheetHeader>
@@ -37,7 +36,7 @@ const ChatSidebar = ({ nodeId }: { nodeId: string }) => {
       </SheetHeader>
       <div
         className={cn(
-          "stretch  mx-auto flex w-full flex-col p-4 text-sm select-text min-w-0",
+          "stretch mx-auto flex w-full min-w-0 flex-col p-4 text-sm select-text",
           messages.length === 0 && "py-24"
         )}
       >
@@ -56,51 +55,51 @@ const ChatSidebar = ({ nodeId }: { nodeId: string }) => {
                     <div
                       key={`${message.id}-${i}`}
                       className={cn(
-                        "rounded-xl p-2 whitespace-pre-wrap min-w-0 overflow-hidden relative",
+                        "relative min-w-0 overflow-hidden rounded-xl p-2 whitespace-pre-wrap",
                         message.role === "user" ? "w-2/3 bg-card" : "text-start"
                       )}
                     >
-                      <ReactMarkDown remarkPlugins={[remarkGfm]}
-                      components={{
-                        code({ className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(
-                            className || ""
-                          )
-                          const isBlock = !!match
+                      <ReactMarkDown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          code({ className, children, ...props }) {
+                            const match = /language-(\w+)/.exec(className || "")
+                            const isBlock = !!match
 
-                          if (!isBlock) {
-                            return (
-                              <code
-                                className="rounded bg-black/10 px-1 py-0.5 font-mono text-sm dark:bg-white/10"
-                                {...props}
-                              >
-                                {children}
-                              </code>
-                            )
-                          }
-
-                          return (
-                            <div className="my-2 max-w-full overflow-hidden rounded-lg border">
-                              <div className="flex items-center justify-between bg-black/80 px-3 py-1 text-xs text-white/70">
-                                <span>{match[1]}</span>
-                              </div>
-                              <div className="overflow-x-auto">
-                                <SyntaxHighlighter
-                                  language={match[1]}
-                                  style={oneDark}
-                                  customStyle={{
-                                    margin: 0,
-                                    borderRadius: 0,
-                                  }}
-                                  PreTag="div"
+                            if (!isBlock) {
+                              return (
+                                <code
+                                  className="rounded bg-black/10 px-1 py-0.5 font-mono text-sm dark:bg-white/10"
+                                  {...props}
                                 >
-                                  {String(children).replace(/\n$/, "")}
-                                </SyntaxHighlighter>
+                                  {children}
+                                </code>
+                              )
+                            }
+
+                            return (
+                              <div className="my-2 max-w-full overflow-hidden rounded-lg border">
+                                <div className="flex items-center justify-between bg-black/80 px-3 py-1 text-xs text-white/70">
+                                  <span>{match[1]}</span>
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <SyntaxHighlighter
+                                    language={match[1]}
+                                    style={oneDark}
+                                    customStyle={{
+                                      margin: 0,
+                                      borderRadius: 0,
+                                    }}
+                                    PreTag="div"
+                                  >
+                                    {String(children).replace(/\n$/, "")}
+                                  </SyntaxHighlighter>
+                                </div>
                               </div>
-                            </div>
-                          )
-                        },
-                      }}>
+                            )
+                          },
+                        }}
+                      >
                         {part.text}
                       </ReactMarkDown>
                     </div>

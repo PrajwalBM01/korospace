@@ -29,6 +29,8 @@ import { Skeleton } from "./ui/skeleton"
 import { useCanvasStore } from "@/store/canvasStore"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
+import { GitHub } from "./ui/github"
+import { githubUrl } from "@/lib/site"
 
 /** Small caps label that opens each section. */
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -99,13 +101,16 @@ const NavRow = ({
   icon,
   title,
   hint,
+  external,
 }: {
   href: string
   icon: React.ReactNode
   title: string
   hint: string
+  external?: boolean
 }) => (
   <Link
+    target={external ? "_blank" : "_self"}
     href={href}
     className="flex items-center gap-2.5 rounded-lg border bg-card p-2.5 transition-colors hover:border-primary/40 hover:bg-accent/40"
   >
@@ -316,6 +321,17 @@ const RightSidebar = () => {
                 icon: <Monitor strokeWidth={1.5} />,
               },
             ]}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <SectionLabel>Open source</SectionLabel>
+          <NavRow
+            external
+            href={githubUrl}
+            icon={<GitHub />}
+            title="Star on GitHub"
+            hint="Korospace is open source — a star helps a lot"
           />
         </div>
       </SidebarContent>

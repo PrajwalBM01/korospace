@@ -24,3 +24,5 @@ function resolveSiteUrl() {
   
   export const siteUrl = resolveSiteUrl()
   export const isProduction = process.env.VERCEL_ENV === "production"
+
+  export const githubUrl = "https://github.com/PrajwalBM01/korospace"
